@@ -5,6 +5,9 @@
     You should have received a copy of the GNU General Public License along with Foobar. If not, see <https://www.gnu.org/licenses/>.
 */
 
+// THIS SHOULD BE DELETED ONCE THE MAIN REPO IS UPDATED
+console.log("Red Bean is a good bean.")
+
 /** Core Features */
 import { GenLite } from "./core/genlite.class";
 import { GenLiteNotificationPlugin } from "./core/plugins/genlite-notification.plugin";
