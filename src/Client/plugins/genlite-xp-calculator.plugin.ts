@@ -217,7 +217,7 @@ export class GenLiteXpCalculator extends GenLitePlugin {
 
         // XP Left
         let xpLeft = document.createElement("span");
-        xpLeft.innerText = `XP Left: ${this.prettyPrintNumber(piSkill.tnl)}`;
+        xpLeft.innerText = `XP Left: ${this.prettyPrintNumber(piSkill.tnl / 10)}`;
         skillInfoNewLine.appendChild(xpLeft);
 
         // Actions
@@ -377,7 +377,7 @@ export class GenLiteXpCalculator extends GenLitePlugin {
         skillInfo.xpHour.innerText = `XP/Hour: ${this.prettyPrintNumber(xpRate)}`;
 
         // XP Left
-        skillInfo.xpLeft.innerText = `XP Left: ${this.prettyPrintNumber(piSkill.tnl)}`;
+        skillInfo.xpLeft.innerText = `XP Left: ${this.prettyPrintNumber(piSkill.tnl / 10)}`;
 
         // Actions
         skillInfo.actions.innerText = `Actions: ${this.prettyPrintNumber(skill.actionsToNext)}`;
