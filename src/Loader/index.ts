@@ -350,6 +350,12 @@ if (needsUpdate) {
         let target  = e.target as HTMLSelectElement;
         genliteFork = target.value;
         localStorage.setItem('GenLite.Fork', genliteFork);
+        
+        // Delete all other created localStorages
+        localStorage.removeItem('GenLite.Client');
+        localStorage.removeItem('GenLite.Version');
+        localStorage.removeItem('GenLite.UpdateTimestamp');
+
         window.location.reload();
     });
     
