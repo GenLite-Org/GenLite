@@ -57,7 +57,7 @@ export class GenLiteNPCHighlightPlugin extends GenLitePlugin {
         }
 
         const NPC = document.game.GAME.npcs[objectID];
-        if (!NPC.info) {
+        if (!NPC || !NPC.info) {
             // Remove the object from the list
             document.game.GAME.npcs[objectID].object.getThreeObject().remove(this.NPCCanvasText[objectID].name);
             this.NPCCanvasText[objectID].name.dispose();
@@ -72,25 +72,27 @@ export class GenLiteNPCHighlightPlugin extends GenLitePlugin {
         this.NPCCanvasText[objectID] = {};
         this.NPCCanvasText[objectID].name = new Text();
         this.NPCCanvasText[objectID].name.text = NPC.info.name;
-        this.NPCCanvasText[objectID].name.color = "#ffff00";
+        this.NPCCanvasText[objectID].name.color = "#FFFF00";
         this.NPCCanvasText[objectID].name.fontSize = 0.25;
         this.NPCCanvasText[objectID].name.anchorX = "center";
         this.NPCCanvasText[objectID].name.anchorY = "bottom";
-        document.game.GAME.npcs[objectID].object.getThreeObject().add(this.NPCCanvasText[objectID].name);
-        this.NPCCanvasText[objectID].name.renderOrder = 1001;
+        // Apply a slight outline to the text
+        this.NPCCanvasText[objectID].name.outlineColor = "#000000";
+        this.NPCCanvasText[objectID].name.outlineWidth = 0.05;
+        this.NPCCanvasText[objectID].name.outlineBlur = 0.015;
+
+        this.NPCCanvasText[objectID].name.renderOrder = 10001;
         this.NPCCanvasText[objectID].name.material.depthTest = false;
         this.NPCCanvasText[objectID].name.material.depthWrite = false;
+
+        document.game.GAME.npcs[objectID].object.getThreeObject().add(this.NPCCanvasText[objectID].name);
+
         this.NPCCanvasText[objectID].name.position.y += NPC.height;
         this.NPCCanvasText[objectID].name.visible = this.isPluginEnabled;
 
         this.NPCCanvasText[objectID].name.scale.x += (1 - NPC.getThreeObject().scale.x)
         this.NPCCanvasText[objectID].name.scale.y += (1 - NPC.getThreeObject().scale.y)
         this.NPCCanvasText[objectID].name.scale.z += (1 - NPC.getThreeObject().scale.z)
-
-        // Apply a slight outline to the text
-        this.NPCCanvasText[objectID].name.outlineColor = "#000000";
-        this.NPCCanvasText[objectID].name.outlineWidth = 0.5;
-        this.NPCCanvasText[objectID].name.outlineBlur = 0.25;
 
         
 
@@ -101,7 +103,7 @@ export class GenLiteNPCHighlightPlugin extends GenLitePlugin {
                 let playerLevel = document.game.PLAYER.character.combatLevel;
 
                 let levelDiff = NPC.info.level - playerLevel
-                let color = "#ffff00";
+                let color = "#4C4E52";
 
                 if (levelDiff > 3 && levelDiff < 6) {
                     color = "#f80"
@@ -130,7 +132,7 @@ export class GenLiteNPCHighlightPlugin extends GenLitePlugin {
 
 
                 // Guarantee that the text is rendered on top of everything
-                this.NPCCanvasText[objectID].attackText.renderOrder = 1000;
+                this.NPCCanvasText[objectID].attackText.renderOrder = 10001;
                 this.NPCCanvasText[objectID].attackText.material.depthTest = false;
                 this.NPCCanvasText[objectID].attackText.material.depthWrite = false;
                 this.NPCCanvasText[objectID].attackText.visible = this.isPluginEnabled;
