@@ -3,17 +3,12 @@
 */
 /*
     This file is part of GenLite.
-
     GenLite is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-
     GenLite is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-
     You should have received a copy of the GNU General Public License along with Foobar. If not, see <https://www.gnu.org/licenses/>.
 */
 
 import { GenLitePlugin } from '../core/interfaces/plugin.class';
-import { Text } from 'troika-three-text';
-import { ThisExpression } from 'estree';
 
 export class GenLiteNPCHighlightPlugin extends GenLitePlugin {
     static pluginName = 'GenLiteNPCHighlightPlugin';
@@ -28,243 +23,275 @@ export class GenLiteNPCHighlightPlugin extends GenLitePlugin {
         },
     };
 
-    isPluginEnabled: boolean = true;
-    hideTagMode = false;
-    lastQuat: any = null
-    lastZoom: any = null
+    trackedNpcs = {};
+    npcData = {};
+    npc_highlight_div = null;
+    render = false;
+    npcHealthList: {
+        [key: string]: any
+        version: string
+    };
+    curCombat: string = "";
+    curEnemy: string = ""
 
-    NPCCanvasText = {};
+    combatX = 0;
+    combatY = 0;
+
+    isPluginEnabled: boolean = false;
+    hideInvert: boolean = true;
+    isAltDown: boolean = false;
+
+    packList;
     async init() {
         document.genlite.registerPlugin(this);
-    }
 
-    async postInit() {
-        document.genlite.ui.registerPlugin("NPC Highlights", "GenLite.NpcHighlight.Enable", this.handlePluginState.bind(this), this.pluginSettings);
+        this.npc_highlight_div = document.createElement('div');
+        this.npc_highlight_div.className = 'npc-indicators-list';
+        document.body.appendChild(this.npc_highlight_div);
+        this.npcHealthList = JSON.parse(localStorage.getItem("GenliteNPCHealthList"));
+        if (this.npcHealthList == null || GenLiteNPCHighlightPlugin.healthListVersion != this.npcHealthList.version)
+            this.npcHealthList = { version: GenLiteNPCHighlightPlugin.healthListVersion };
+        this.npcData = JSON.parse(localStorage.getItem("GenliteNpcHideData"));
+        if (this.npcData == null || GenLiteNPCHighlightPlugin.healthListVersion != this.npcHealthList.version)
+            this.npcData = {};
 
         window.addEventListener('keydown', this.keyDownHandler.bind(this));
         window.addEventListener('keyup', this.keyUpHandler.bind(this));
+        window.addEventListener("blur", this.blurHandler.bind(this));
     }
 
-    keyDownHandler(e: KeyboardEvent): void {
-        if (e.key == "Alt" && e.repeat == false) {
-            e.preventDefault();
-            this.hideTagMode = true;
-            console.log("Hiding Tags Enabled")
+    async postInit() {
+        this.packList = document['GenLiteWikiDataCollectionPlugin'].packList;
+        document.genlite.ui.registerPlugin("NPC Highlights", "GenLite.NpcHighlight.Enable", this.handlePluginState.bind(this), this.pluginSettings);
+        for (let key in document.game.GAME.npcs) {
+            this.Game_createNPC(key, null);
         }
     }
 
-    keyUpHandler(e: KeyboardEvent): void {
-        if (e.key === "Alt") {
-            this.hideTagMode = false;
-            console.log("Hiding Tags Disabled")
-        }
-    }
-    
     handlePluginState(state: boolean): void {
+        // when disabling the plugin clear the current list of npcs
+        if (state === false) {
+            this.npc_highlight_div.innerHTML = '';
+            this.trackedNpcs = {};
+        }
+
         this.isPluginEnabled = state;
-
-        for (const key in this.NPCCanvasText) {
-            this.NPCCanvasText[key].name.visible = state;
-            this.NPCCanvasText[key].name.sync();
-            if (this.NPCCanvasText[key].attackText) {
-                this.NPCCanvasText[key].attackText.visible = state;
-                this.NPCCanvasText[key].attackText.sync();
-            }
-        }
     }
-
-    updateNPCTagRotations(): void {
-        for (const key in this.NPCCanvasText) {
-            this.NPCCanvasText[key].name.quaternion.copy(document.game.GRAPHICS.camera.camera.quaternion);
-        }
-    }
-
-    Camera_update() {
-        if (!this.isPluginEnabled) {
-            return;
-        }
-
-        if (this.lastQuat == null) {
-            this.lastQuat = document.game.GRAPHICS.camera.camera.quaternion.clone();
-        }
-
-        if (this.lastZoom == null) {
-            this.lastZoom = document.game.GRAPHICS.camera.camera.zoom;
-        }
-
-        if (this.lastQuat.equals(document.game.GRAPHICS.camera.camera.quaternion) && this.lastZoom == document.game.GRAPHICS.camera.camera.zoom) {
-            return;
-        }
-
-
-        this.lastQuat.copy(document.game.GRAPHICS.camera.camera.quaternion);
-        this.lastZoom = document.game.GRAPHICS.camera.camera.zoom;
-
-        for (const key in this.NPCCanvasText) {
-            this.NPCCanvasText[key].name.quaternion.copy(document.game.GRAPHICS.camera.camera.quaternion);
-            let scale = 1 / (document.game.GRAPHICS.camera.camera.zoom * 0.5);
-            scale *= (1 + this.NPCCanvasText[key].name.position.distanceTo(document.game.GRAPHICS.camera.camera.position) / 100);
-            this.NPCCanvasText[key].name.scale.set(scale, scale, scale);
-        }
-
-
-
-    }
-
-    Game_createNPC(objectID: any, objectData: any): void {
-        if (this.NPCCanvasText[objectID]) {
-            return;
-        }
-
-        const NPC = document.game.GAME.npcs[objectID];
-        const NPCObject = NPC.object;
-
-        // if (!NPC && !NPC.info) {
-        //     // Remove the object from the list
-        //     document.game.GAME.npcs[objectID].object.getThreeObject().remove(this.NPCCanvasText[objectID].name);
-        //     this.NPCCanvasText[objectID].name.dispose();
-        //     if (this.NPCCanvasText[objectID].attackText) {
-        //         document.game.GAME.npcs[objectID].object.getThreeObject().remove(this.NPCCanvasText[objectID].attackText);
-        //         this.NPCCanvasText[objectID].attackText.dispose();
-        //     }
-        //     delete this.NPCCanvasText[objectID];
-        // }
-
-        this.NPCCanvasText[objectID] = {};
-        this.NPCCanvasText[objectID].name = new Text();
-        
-        this.NPCCanvasText[objectID].name.text = NPC.info.name;
-        this.NPCCanvasText[objectID].name.color = "#FFFF00";
-        this.NPCCanvasText[objectID].name.fontSize = 0.15;
-        this.NPCCanvasText[objectID].name.anchorX = "center";
-        this.NPCCanvasText[objectID].name.anchorY = "bottom";
-
-        document.game.GRAPHICS.scene.threeScene.add(this.NPCCanvasText[objectID].name);
-
-        // Text should not be affected by camera fog
-
-
-        this.NPCCanvasText[objectID].name.position.y += NPC.height;
-        this.NPCCanvasText[objectID].name.visible = this.isPluginEnabled;
-
-        // Apply a slight outline to the text
-        this.NPCCanvasText[objectID].name.outlineColor = "#000000";
-        this.NPCCanvasText[objectID].name.outlineWidth = 0.010;
-        this.NPCCanvasText[objectID].name.outlineBlur = 0.005;
-
-        this.NPCCanvasText[objectID].name.sync(() => {
-            this.NPCCanvasText[objectID].name.renderOrder = 10001;
-            this.NPCCanvasText[objectID].name.material[0].depthTest = false;
-            this.NPCCanvasText[objectID].name.material[0].depthWrite = false;
-            this.NPCCanvasText[objectID].name.material[1].depthTest = false;
-            this.NPCCanvasText[objectID].name.material[1].depthWrite = false;
-
-            if (NPC.info.attackable) {
-                this.NPCCanvasText[objectID].name.position.y += NPC.height;
-
-
-                let playerLevel = document.game.PLAYER.character.combatLevel;
-
-                let levelDiff = NPC.info.level - playerLevel
-                let color = "#4C4E52";
-
-                if (levelDiff > 3 && levelDiff < 6) {
-                    color = "#f80"
-                } else if (levelDiff >= 6) {
-                    color = "#f00";
-                } else if (levelDiff < -3 && levelDiff > -6) {
-                    color = "#8f0";
-                } else if (levelDiff <= -6) {
-                    color = "#4C4E52";
-                }
-
-                // It should be the Name (Level X)
-                this.NPCCanvasText[objectID].attackText = new Text();
-                this.NPCCanvasText[objectID].attackText.text = " (Level " + NPC.info.level + ")";
-                this.NPCCanvasText[objectID].attackText.color = color;
-                this.NPCCanvasText[objectID].attackText.fontSize = 0.10;
-                this.NPCCanvasText[objectID].attackText.anchorX = "center";
-                this.NPCCanvasText[objectID].attackText.anchorY = "top";
-                this.NPCCanvasText[objectID].attackText.renderOrder = 10001;
-                this.NPCCanvasText[objectID].attackText.material.depthTest = false;
-                this.NPCCanvasText[objectID].attackText.material.depthWrite = false;
-                this.NPCCanvasText[objectID].attackText.visible = this.isPluginEnabled;
-                this.NPCCanvasText[objectID].name.add(this.NPCCanvasText[objectID].attackText);
-
-                // Apply a slight outline to the text
-                this.NPCCanvasText[objectID].attackText.outlineColor = "#000000";
-                this.NPCCanvasText[objectID].attackText.outlineWidth = 0.010;
-                this.NPCCanvasText[objectID].attackText.outlineBlur = 0.005;
-
-                this.NPCCanvasText[objectID].attackText.sync(() => {
-                    this.NPCCanvasText[objectID].attackText.renderOrder = 10001;
-                    this.NPCCanvasText[objectID].attackText.material[0].depthTest = false;
-                    this.NPCCanvasText[objectID].attackText.material[0].depthWrite = false;
-                    this.NPCCanvasText[objectID].attackText.material[1].depthTest = false;
-                    this.NPCCanvasText[objectID].attackText.material[1].depthWrite = false;
-                });
-            }
-
-            this.NPCCanvasText[objectID].name.sync(() => {
-                if (this.NPCCanvasText[objectID].attackText) {
-                    this.NPCCanvasText[objectID].attackText.position.y -= NPC.height;
-                }
-            });
-        });
-       
-        let NPCObjectUpdate = NPCObject.update;
-        let pluginContext = this;
-        NPCObject.update = function () {
-            // Call the original update function with the original context
-            NPCObjectUpdate.apply(this, arguments);
-
-
-            pluginContext.NPCCanvasText[objectID].name.position.x = this.getThreeObject().position.x;
-            pluginContext.NPCCanvasText[objectID].name.position.y = this.getThreeObject().position.y + NPC.height;
-            pluginContext.NPCCanvasText[objectID].name.position.z = this.getThreeObject().position.z;
-
-            if (pluginContext.NPCCanvasText[objectID].attackText) {
-                pluginContext.NPCCanvasText[objectID].name.position.y += NPC.height;
-            }
-
-
-            let scale = 1 / (document.game.GRAPHICS.camera.camera.zoom * 0.5);
-
-            scale *= (1 + pluginContext.NPCCanvasText[objectID].name.position.distanceTo(document.game.GRAPHICS.camera.camera.position) / 100);
-
-            pluginContext.NPCCanvasText[objectID].name.scale.set(scale, scale, scale);
-
-            pluginContext.NPCCanvasText[objectID].name.quaternion.copy(document.game.GRAPHICS.camera.camera.quaternion);
-        };
-    }
-
-    Game_removeNPC(e: any, t: any): void {
-        if (this.NPCCanvasText[e]) {
-            if (this.NPCCanvasText[e].name) {
-                document.game.GAME.npcs[e].object.getThreeObject().remove(this.NPCCanvasText[e].name);
-                this.NPCCanvasText[e].name.dispose();
-            }
-            if (this.NPCCanvasText[e].attackText) {
-                document.game.GAME.npcs[e].object.getThreeObject().remove(this.NPCCanvasText[e].attackText);
-                this.NPCCanvasText[e].attackText.dispose();
-            }
-            delete this.NPCCanvasText[e];
-        }
-    }
-
 
     handleHideInvertEnableDisable(state: boolean) {
-        // // always clear the current list of npcs
-        // this.npc_highlight_div.innerHTML = '';
-        // this.trackedNpcs = {};
+        // always clear the current list of npcs
+        this.npc_highlight_div.innerHTML = '';
+        this.trackedNpcs = {};
 
-        // this.hideInvert = state;
+        this.hideInvert = state;
     }
 
-    loginOK() {
-        for (const key in document.game.GAME.npcs) {
-            this.Game_createNPC(key, document.game.GAME.npcs[key]);
+    Game_createNPC(objectKey: any, t: any): void {
+        let npc = document.game.GAME.npcs[objectKey];
+        let hpKey = this.packList[npc.id.split('-')[0]]
+        let text = npc.htmlName;
+        if (this.npcHealthList[hpKey] !== undefined)
+            text += ` HP: ${this.npcHealthList[hpKey]}`
+        text += `<div class="genlite-npc-setting" style="display: ${this.isAltDown ? "inline-block" : "none"}; pointer-events: auto;" onclick="document.${GenLiteNPCHighlightPlugin.pluginName}.hide_npc('${hpKey}');void(0);"> &#8863;</div>`;
+        this.trackedNpcs[objectKey] = this.create_text_element(hpKey, text);
+        this.trackedNpcs[objectKey].hasHp = this.npcHealthList[hpKey] !== undefined;
+
+        let originalNPCUpdate = npc.update;
+        let pluginContext = this;
+        npc.update = function () {
+            originalNPCUpdate.apply(npc, arguments);
+            if (pluginContext.isPluginEnabled) {
+                let worldPos;
+
+                /* if the health was updated but the npc tag doesnt have that regen the tag */
+                if (!pluginContext.trackedNpcs[this.id].hasHp && pluginContext.npcHealthList[pluginContext.packList[objectKey.split('-')[0]]]) {
+                    pluginContext.trackedNpcs[this.id].remove();
+                    delete pluginContext.trackedNpcs[this.id];
+                    pluginContext.Game_createNPC(this.id, null);
+                    this.update = originalNPCUpdate;
+                    return;
+                }
+
+                /* if in combat grab the threeObject position (the actual current position of the sprite not the world pos)
+                    mult by 0.8 which is the height of the health bar
+                */
+                let npcHide = pluginContext.hideInvert ? pluginContext.npcData[pluginContext.packList[this.id.split('-')[0]]] == 1 : !(pluginContext.npcData[pluginContext.packList[this.id.split('-')[0]]] == 1);
+                let zHide = false;
+                if (!npcHide || pluginContext.isAltDown) {
+                    if (this.id == pluginContext.curEnemy) {
+                        worldPos = new document.game.THREE.Vector3().copy(this.object.position());
+                        worldPos.y += 0.8;
+                    } else {
+                        worldPos = new document.game.THREE.Vector3().copy(document.game.GAME.npcs[this.id].position());
+                        worldPos.y += this.height
+                    }
+                    let screenPos = pluginContext.world_to_screen(worldPos);
+                    if (this.id == pluginContext.curEnemy)
+                        screenPos.y *= 0.9; // move the name tag a fixed position above the name tag
+                    zHide = screenPos.z > 1.0; //if behind camera
+                    if (zHide || (npcHide && !pluginContext.isAltDown)) {
+                        pluginContext.trackedNpcs[this.id].style.visibility = 'hidden';
+                    } else {
+                        pluginContext.trackedNpcs[this.id].style.visibility = 'visible';
+                    }
+                    pluginContext.trackedNpcs[this.id].style.top = screenPos.y + "px";
+                    pluginContext.trackedNpcs[this.id].style.left = screenPos.x + "px";
+                }
+            }
         }
     }
 
+    Game_deleteNPC(objectKey: any): void {
+        this.trackedNpcs[objectKey].remove();
+        delete this.trackedNpcs[objectKey];
+    }
+
+    // Camera_update(dt) {
+    // }
+
+    async loginOK() {
+        this.render = true;
+    }
+
+    Network_logoutOK() {
+        this.npc_highlight_div.innerHTML = '';
+        this.trackedNpcs = {};
+        this.render = false;
+    }
+
+    /* figure out which npc we are fighting and when that combat ends */
+    Network_handle(verb, payload) {
+        if (this.isPluginEnabled === false || document.game.NETWORK.loggedIn === false) {
+            return;
+        }
+
+        /* look for start of combat set the curEnemy and record data */
+        if (verb == "spawnObject" && payload.type == "combat" &&
+            (payload.participant1 == document.game.PLAYER.id || payload.participant2 == document.game.PLAYER.id)) {
+            this.curCombat = payload.id;
+            let curCombat = document.game.GAME.combats[payload.id];
+            this.curEnemy = curCombat.left.id == document.game.PLAYER.id ? curCombat.right.id : curCombat.left.id;
+            return;
+        }
+        if (verb == "removeObject" && payload.type == "combat" && payload.id == this.curCombat) {
+            this.curCombat = "";
+            this.curEnemy = "";
+            return;
+        }
+    }
+
+    Game_combatUpdate(update) {
+        if (this.isPluginEnabled === false) {
+            return;
+        }
+        let object = document.game.GAME.objectById(update.id);
+        if (update.id == document.game.PLAYER.id || document.game.GAME.players[update.id] !== undefined || object === undefined)
+            return;
+
+        let hpKey = this.packList[object.id.split('-')[0]];
+        if (hpKey === undefined)
+            return;
+
+        let npcsToMod;
+        if (this.npcHealthList[hpKey] === undefined) {
+            this.npcHealthList[hpKey] = update.maxhp;
+            localStorage.setItem("GenliteNPCHealthList", JSON.stringify(this.npcHealthList));
+        }
+        npcsToMod = Object.keys(document.game.GAME.npcs).filter(x => document.game.GAME.npcs[x].id.split('-')[0] == object.id.split('-')[0]);
+        for (let key in npcsToMod) {
+            let npcid = npcsToMod[key];
+
+            if (this.trackedNpcs[npcid] === undefined || this.trackedNpcs[npcid].hasHp) {
+                continue;
+            }
+
+            this.trackedNpcs[npcid].innerHTML += ` HP: ${this.npcHealthList[hpKey]}`;
+            this.trackedNpcs[npcid].hasHp = true;
+        }
+        if (this.trackedNpcs.hasOwnProperty(object.id))
+            this.trackedNpcs[object.id].innerHTML = `<div>${object.htmlName}</div><div>HP: ${update.hp}/${update.maxhp}</div>`;
+    }
+
+
+    world_to_screen(pos) {
+        var p = pos;
+        var screenPos = p.project(document.game.GRAPHICS.threeCamera());
+
+        screenPos.x = (screenPos.x + 1) / 2 * document.body.clientWidth;
+        screenPos.y = -(screenPos.y - 1) / 2 * document.body.clientHeight;
+
+        return screenPos;
+    }
+
+    create_text_element(key, text) {
+        let element = document.createElement('div');
+        if (this.hideInvert) {
+            element.className = this.npcData[key] == 1 ? 'spell-locked' : 'text-yellow';
+        } else {
+            element.className = this.npcData[key] == 1 ? 'text-yellow' : 'spell-locked';
+        }
+        element.style.position = 'absolute';
+        //element.style.zIndex = '99999';
+        element.innerHTML = text;
+        element.style.transform = 'translateX(-50%)';
+        element.style.fontFamily = 'acme, times new roman, Times, serif'; // Set Font
+        element.style.textShadow = '-1px -1px 0 #000,0   -1px 0 #000, 1px -1px 0 #000, 1px  0   0 #000, 1px  1px 0 #000, 0    1px 0 #000, -1px  1px 0 #000, -1px  0   0 #000';
+        element.style.pointerEvents = 'none';
+
+        this.npc_highlight_div.appendChild(element);
+
+        return element;
+    }
+
+    hide_npc(packId) {
+        if (!this.npcData.hasOwnProperty(packId))
+            this.npcData[packId] = 0;
+
+        if (this.npcData[packId] != 1)
+            this.npcData[packId] = 1;
+        else
+            this.npcData[packId] = 0;
+
+        this.save_item_list();
+    }
+
+    save_item_list() {
+        this.npc_highlight_div.innerHTML = '';
+        this.trackedNpcs = {};
+        localStorage.setItem("GenliteNpcHideData", JSON.stringify(this.npcData));
+    }
+
+
+    keyDownHandler(event) {
+        if (event.key !== "Alt")
+            return;
+
+        event.preventDefault();
+        if (!event.repeat) {
+            this.isAltDown = true;
+            this.setDisplayState("inline-block");
+        }
+    }
+    keyUpHandler(event) {
+        if (event.key !== "Alt")
+            return;
+
+        event.preventDefault();
+
+        this.isAltDown = false;
+        this.setDisplayState("none");
+    }
+
+    blurHandler() {
+        this.isAltDown = false;
+        this.setDisplayState("none");
+    }
+
+    setDisplayState(state) {
+        const hiddenElements = document.querySelectorAll('.genlite-npc-setting') as NodeListOf<HTMLElement>;
+
+        hiddenElements.forEach((element) => {
+            element.style.display = state;
+        });
+    }
 }
