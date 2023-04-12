@@ -71,19 +71,12 @@ export class GenLiteNPCHighlightPlugin extends GenLitePlugin {
 
         this.NPCCanvasText[objectID] = {};
         this.NPCCanvasText[objectID].name = new Text();
+        
         this.NPCCanvasText[objectID].name.text = NPC.info.name;
         this.NPCCanvasText[objectID].name.color = "#FFFF00";
         this.NPCCanvasText[objectID].name.fontSize = 0.25;
         this.NPCCanvasText[objectID].name.anchorX = "center";
         this.NPCCanvasText[objectID].name.anchorY = "bottom";
-        // Apply a slight outline to the text
-        this.NPCCanvasText[objectID].name.outlineColor = "#000000";
-        this.NPCCanvasText[objectID].name.outlineWidth = 0.05;
-        this.NPCCanvasText[objectID].name.outlineBlur = 0.015;
-
-        this.NPCCanvasText[objectID].name.renderOrder = 10001;
-        this.NPCCanvasText[objectID].name.material.depthTest = false;
-        this.NPCCanvasText[objectID].name.material.depthWrite = false;
 
         document.game.GAME.npcs[objectID].object.getThreeObject().add(this.NPCCanvasText[objectID].name);
 
@@ -94,7 +87,19 @@ export class GenLiteNPCHighlightPlugin extends GenLitePlugin {
         this.NPCCanvasText[objectID].name.scale.y += (1 - NPC.getThreeObject().scale.y)
         this.NPCCanvasText[objectID].name.scale.z += (1 - NPC.getThreeObject().scale.z)
 
-        
+        // Apply a slight outline to the text
+        this.NPCCanvasText[objectID].name.outlineColor = "#000000";
+        this.NPCCanvasText[objectID].name.outlineWidth = 0.025;
+        this.NPCCanvasText[objectID].name.outlineBlur = 0.015;
+
+        this.NPCCanvasText[objectID].name.sync(() => {
+            this.NPCCanvasText[objectID].name.renderOrder = 10001;
+            this.NPCCanvasText[objectID].name.material[0].depthTest = false;
+            this.NPCCanvasText[objectID].name.material[0].depthWrite = false;
+            this.NPCCanvasText[objectID].name.material[1].depthTest = false;
+            this.NPCCanvasText[objectID].name.material[1].depthWrite = false;
+        })
+
 
 
         this.NPCCanvasText[objectID].name.sync(() => {
