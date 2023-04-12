@@ -1,4 +1,4 @@
-# GenLite 0.2.38 - For GenFanad
+# GenLite 0.2.39 - For GenFanad
 
 GenLite installation instructions
 1. Install [TamperMonkey(All Browsers)](https://www.tampermonkey.net/) in your browser of choice.
