@@ -25,6 +25,8 @@ export abstract class GenLitePlugin {
     PlayerInfo_updateTooltip?(): void;
     PlayerInfo_updateSkills?(): void;
     Game_combatUpdate?(update: any): void;
+    Game_createNPC?(e: any, t: any): void;
+    Game_deleteNPC?(e: any, t: any): void;
     PlayerHUD_setHealth?(current: number, max: number): void;
     Inventory_handleUpdatePacket?(packet: any): void;
     Bank_handlePacket?(packet: any): void;

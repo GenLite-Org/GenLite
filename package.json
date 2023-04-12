@@ -10,7 +10,8 @@
   "dependencies": {
     "@types/stats.js": "^0.17.0",
     "robust-point-in-polygon": "^1.0.3",
-    "stats.js": "^0.17.0"
+    "stats.js": "^0.17.0",
+    "troika-three-text": "^0.47.1"
   },
   "devDependencies": {
     "jsdoc": "^4.0.0",

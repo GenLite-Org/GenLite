@@ -47,6 +47,8 @@ export class GenLite {
         this.installHook('PlayerInfo', 'updateTooltip');
         this.installHook('PlayerInfo', 'updateSkills');
         this.installHook('Game', 'combatUpdate');
+        this.installHook('Game', 'createNPC');
+        this.installHook('Game', 'deleteNPC');
         this.installHook('PlayerHUD', 'setHealth');
         this.installHook('Inventory', 'handleUpdatePacket');
         this.installHook('Inventory', '_getContextOptionsBank');
