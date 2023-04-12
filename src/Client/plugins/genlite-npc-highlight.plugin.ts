@@ -72,7 +72,7 @@ export class GenLiteNPCHighlightPlugin extends GenLitePlugin {
         this.NPCCanvasText[objectID] = {};
         this.NPCCanvasText[objectID].name = new Text();
         this.NPCCanvasText[objectID].name.text = NPC.info.name;
-        this.NPCCanvasText[objectID].name.color = "#FFFFFF";
+        this.NPCCanvasText[objectID].name.color = "#ffff00";
         this.NPCCanvasText[objectID].name.fontSize = 0.25;
         this.NPCCanvasText[objectID].name.anchorX = "center";
         this.NPCCanvasText[objectID].name.anchorY = "bottom";
@@ -86,6 +86,12 @@ export class GenLiteNPCHighlightPlugin extends GenLitePlugin {
         this.NPCCanvasText[objectID].name.scale.x += (1 - NPC.getThreeObject().scale.x)
         this.NPCCanvasText[objectID].name.scale.y += (1 - NPC.getThreeObject().scale.y)
         this.NPCCanvasText[objectID].name.scale.z += (1 - NPC.getThreeObject().scale.z)
+
+        // Apply a slight outline to the text
+        this.NPCCanvasText[objectID].name.outlineColor = "#000000";
+        this.NPCCanvasText[objectID].name.outlineWidth = 0.5;
+        this.NPCCanvasText[objectID].name.outlineBlur = 0.25;
+
         
 
 
@@ -95,7 +101,7 @@ export class GenLiteNPCHighlightPlugin extends GenLitePlugin {
                 let playerLevel = document.game.PLAYER.character.combatLevel;
 
                 let levelDiff = NPC.info.level - playerLevel
-                let color = "#FFFFFF";
+                let color = "#ffff00";
 
                 if (levelDiff > 3 && levelDiff < 6) {
                     color = "#f80"
