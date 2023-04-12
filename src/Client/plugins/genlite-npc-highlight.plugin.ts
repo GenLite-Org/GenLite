@@ -57,6 +57,17 @@ export class GenLiteNPCHighlightPlugin extends GenLitePlugin {
         }
 
         const NPC = document.game.GAME.npcs[objectID];
+        if (!NPC.info) {
+            // Remove the object from the list
+            document.game.GAME.npcs[objectID].object.getThreeObject().remove(this.NPCCanvasText[objectID].name);
+            this.NPCCanvasText[objectID].name.dispose();
+            if (this.NPCCanvasText[objectID].attackText) {
+                document.game.GAME.npcs[objectID].object.getThreeObject().remove(this.NPCCanvasText[objectID].attackText);
+                this.NPCCanvasText[objectID].attackText.dispose();
+            }
+            delete this.NPCCanvasText[objectID];
+            return;
+        }
 
         this.NPCCanvasText[objectID] = {};
         this.NPCCanvasText[objectID].name = new Text();
@@ -130,11 +141,11 @@ export class GenLiteNPCHighlightPlugin extends GenLitePlugin {
     Game_removeNPC(e: any, t: any): void {
         if (this.NPCCanvasText[e]) {
             if (this.NPCCanvasText[e].name) {
-                document.game.GAME.npcs[e].object.getThreeObject().remove(this.NPCCanvasText[t].name);
+                document.game.GAME.npcs[e].object.getThreeObject().remove(this.NPCCanvasText[e].name);
                 this.NPCCanvasText[e].name.dispose();
             }
             if (this.NPCCanvasText[e].attackText) {
-                document.game.GAME.npcs[e].object.getThreeObject().remove(this.NPCCanvasText[t].attackText);
+                document.game.GAME.npcs[e].object.getThreeObject().remove(this.NPCCanvasText[e].attackText);
                 this.NPCCanvasText[e].attackText.dispose();
             }
             delete this.NPCCanvasText[e];
