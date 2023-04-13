@@ -41,13 +41,13 @@ export abstract class GenLitePlugin {
     // Calls used in New Canvas Code
     Game_combatUpdate?(update: any): void;
     Game_createNPC?(e: any, t: any): void;
-    Game_deleteNPC?(e: any, t: any): void;
+    Game_deleteNPC?(npcID: any, npc: any): void;
     Game_createPlayer?(e: any, t: any): void;
-    Game_deletePlayer?(e: any, t: any): void;
+    Game_deletePlayer?(playerID: any, player: any): void;
     Game_deleteItem?(e: any, t: any): void;
-    Character_update?(e: any, t: any, test: any): void;
-    ItemStack_update?(e: any, t: any, test: any): void;
-    NPC_update?(e: any, t: any, test: any): void;
+    Character_update?(camera: any, dt: any, character: any): Promise<void>;
+    ItemStack_update?(camera: any, dt: any, itemstack: any): Promise<void>;
+    NPC_update?(camera: any, dt: any, npc: any): Promise<void>;
 
 
     log(...args): void {
