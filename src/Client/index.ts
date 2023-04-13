@@ -43,6 +43,7 @@ import { GenLiteEnhancedContextMenu } from "./plugins/genlite-enhanced-context-m
 import { GenLiteQuestPlugin } from "./plugins/genlite-quest.plugin";
 import { GenLiteEnhancedBanking } from "./plugins/genlite-enhanced-banking.plugin";
 import { GenLiteTaggingPlugin } from "./plugins/genlite-tagging.plugin";
+import { GenliteSimplifiedChatUiPlugin } from './plugins/genlite-simplified-chat-ui.plugin';
 
 // TODO: use globals.ts?
 declare global {
@@ -130,6 +131,7 @@ let isInitialized = false;
         gameObject('PhasedLoadingManager', 'gS');
         gameObject('Trade', 'Hv');
         gameObject('Friends', 'G_');
+        gameObject('PlayerHUD', 'zv');
 
 
         // Objects
@@ -150,6 +152,7 @@ let isInitialized = false;
         gameObject('SETTINGS', 'bw');
         gameObject('THREE', 'e');
         gameObject('PLAYER_INFO', 'fw');
+        gameObject('PLAYER_HUD', '_w');
         gameObject('NPC', 'I_');
         gameObject('TRADE', 'Mw');
         gameObject('NETWORK_CONTAINER', 'mg');
@@ -211,6 +214,7 @@ let isInitialized = false;
         await genlite.pluginLoader.addPlugin(GenLiteQuestPlugin);
         await genlite.pluginLoader.addPlugin(GenLiteEnhancedBanking);
         await genlite.pluginLoader.addPlugin(GenLiteTaggingPlugin);
+        await genlite.pluginLoader.addPlugin(GenliteSimplifiedChatUiPlugin);
 
         /** post init things */
         // await document['GenLiteDatabasePlugin'].postInit();
