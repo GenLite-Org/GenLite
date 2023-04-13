@@ -9,189 +9,117 @@
 */
 
 // Import GenLite Plugin Interface
-import {GenLitePlugin} from '../core/interfaces/plugin.class';
+import { GenLitePlugin } from '../core/interfaces/plugin.class';
+import { Text } from 'troika-three-text';
 
 // Create PlayerTools Plugin Class
 export class GenLitePlayerToolsPlugin extends GenLitePlugin {
     static pluginName = 'GenLitePlayerToolsPlugin';
 
     // Plugin Settings
-    isEnabled: boolean = false; // Enable the plugin (Enabled/Disabled by the user)
-    doRender: boolean = false; // Render the plugin's UI (Enabled by LoginOK(), disabled by LogoutOK())
-
-    // Plugin Data
-    trackedPlayers = {};
-
-    // Plugin UI
-    PlayerTagContainer: HTMLDivElement;
+    isPluginEnabled: boolean = false;
     
-    pluginSettings : Settings = {
+    // Plugin Data
+    PlayerCanvasText = {};
+
+
+    pluginSettings: Settings = {
         // Checkbox Example
         "Hide Character": {
             type: 'checkbox',
             oldKey: 'GenLite.PlayerTools.HidePlayer',
-            value: false,
+            value: this.isPluginEnabled,
             stateHandler: this.handleHidePlayerSettingChange.bind(this)
         }
     };
-    
+
+
+    // Hooked Functions
+
 
     // Plugin Hooks
     async init() {
         document.genlite.registerPlugin(this);
-
-        // Create and Append the Player Tag Container to the Body
-        this.PlayerTagContainer = document.createElement('div');
-        this.PlayerTagContainer.className = 'player-tag-container';
-        document.body.appendChild(this.PlayerTagContainer);
     }
 
     async postInit() {
         this.pluginSettings = document.genlite.ui.registerPlugin("Player Tools", null, this.handlePluginState.bind(this), this.pluginSettings);
     }
 
-    handlePluginState(state: boolean): void {
-        if (!state) {
-            // Clear Tracked Players
-            this.trackedPlayers = {};
-
-            // Empty the Player Tag Container
-            this.PlayerTagContainer.innerHTML = "";
+    Character_update(e: any, t: any, character: any): void {
+        if (!this.isPluginEnabled) {
+            return;
         }
 
-        this.isEnabled = state;
-    }
+        if (character == document.game.GAME.me.character) {
+            return;
+        }
 
-    Camera_update(dt) {
-        // Set the Player Tag Container's Visibility to Hidden based off doRender
-        this.PlayerTagContainer.style.visibility = this.doRender ? 'visible' : 'hidden';
+        if (!this.PlayerCanvasText[character.id]) {
+            this.PlayerCanvasText[character.id] = new Text();
+            this.PlayerCanvasText[character.id].text = character.name();
+            this.PlayerCanvasText[character.id].color = "#FFFFFF";
+            this.PlayerCanvasText[character.id].fontSize = 0.15;
+            this.PlayerCanvasText[character.id].anchorX = "center";
+            this.PlayerCanvasText[character.id].anchorY = "bottom";
+            this.PlayerCanvasText[character.id].font = "https://raw.githubusercontent.com/KKonaOG/GenLite/main/Acme-Regular.ttf";
 
-        // Verify the plugin is enabled and the UI is in a renderable state before continuing
-        if (!this.isEnabled || !this.doRender) return;
+            // Apply a slight outline to the text
+            this.PlayerCanvasText[character.id].outlineColor = "#000000";
+            this.PlayerCanvasText[character.id].outlineWidth = 0.010;
+            this.PlayerCanvasText[character.id].outlineBlur = 0.005;
 
-        // Get World Players
-        const worldPlayers = document.game.GAME.players;
+            this.PlayerCanvasText[character.id].visible = this.isPluginEnabled;
+    
+            document.game.GRAPHICS.scene.threeScene.add(this.PlayerCanvasText[character.id]);
 
-        // Determine Players to Add to Tracking
-        let newPlayers = Object.keys(worldPlayers).filter(pID => !Object.keys(this.trackedPlayers).includes(pID));
+            this.PlayerCanvasText[character.id].sync(() => {
+                this.PlayerCanvasText[character.id].renderOrder = 10002;
+                this.PlayerCanvasText[character.id].material[0].depthTest = false;
+                this.PlayerCanvasText[character.id].material[0].depthWrite = false;
+                this.PlayerCanvasText[character.id].material[1].depthTest = false;
+                this.PlayerCanvasText[character.id].material[1].depthWrite = false;
+            });
+        }
 
-        // Determine Players to Remove from Tracking
-        let oldPlayers = Object.keys(this.trackedPlayers).filter(pID => !Object.keys(worldPlayers).includes(pID));
+        // Update Player Text Position
+        this.PlayerCanvasText[character.id].position.x = character.worldPos.x;
+        this.PlayerCanvasText[character.id].position.y = character.worldPos.y + character.height;
+        this.PlayerCanvasText[character.id].position.z = character.worldPos.z;
 
-        // Add New Players to Tracking
-        newPlayers.forEach(pID => {
-            this.trackedPlayers[pID] = {
-                character: worldPlayers[pID],
-                tag: document.createElement('div')
-            };
+        // Update Player Text Scale
+        let scale = 1 / (document.game.GRAPHICS.camera.camera.zoom * 0.5);
 
+        scale *= (1 + this.PlayerCanvasText[character.id].position.distanceTo(document.game.GRAPHICS.camera.camera.position) / 100);
 
-            // Set the Player Tag's HTML to the Player's Nickname
-            this.trackedPlayers[pID].tag.innerHTML = this.trackedPlayers[pID].character.nickname;
-
-            // Set the Player Tag's Attributes
-            
-            // Font Family
-            this.trackedPlayers[pID].tag.style.fontFamily = 'acme, times new roman, Times, serif';
-
-            // Absolute
-            this.trackedPlayers[pID].tag.style.position = 'absolute';
-
-            // Transform
-            this.trackedPlayers[pID].tag.style.transform = 'translate(-50%)';
-
-            // No Pointer Events
-            this.trackedPlayers[pID].tag.style.pointerEvents = 'none';
-
-            // Text Shadow
-            this.trackedPlayers[pID].tag.style.textShadow = '-1px -1px 0 #000,0   -1px 0 #000, 1px -1px 0 #000, 1px  0   0 #000, 1px  1px 0 #000, 0    1px 0 #000, -1px  1px 0 #000, -1px  0   0 #000';
-
-            // Font Size
-            // this.trackedPlayers[pID].tag.style.fontSize = '20px';
-
-            // Add the Player Tag to the Player Tag Container
-            this.PlayerTagContainer.appendChild(this.trackedPlayers[pID].tag);
-        });
-
-        // Remove Old Players from Tracking
-        oldPlayers.forEach(pID => {
-            // These two checks are here for "failsafe" purposes. If the Player Tag is undefined, or if the Player Tag Container is empty, then remove the Player from Tracking.
-            if (this.trackedPlayers[pID].tag === undefined) {
-                delete this.trackedPlayers[pID];
-                return;
-            }
-
-            if (this.PlayerTagContainer.innerHTML == "") {
-                delete this.trackedPlayers[pID];
-                return;
-            }
-
-            this.PlayerTagContainer.removeChild(this.trackedPlayers[pID].tag);
-            delete this.trackedPlayers[pID];
-        });
+        this.PlayerCanvasText[character.id].scale.set(scale, scale, scale);
 
 
-        // Update Player Tag Positions
-        Object.keys(this.trackedPlayers).forEach(pID => {
-            const player = this.trackedPlayers[pID];
-            const character = player.character;
+        // Quaternion should be the same as camera
+        this.PlayerCanvasText[character.id].quaternion.copy(document.game.GRAPHICS.camera.camera.quaternion);
 
-            // Get the Player's Position
-
-            // First see if the Player is in combat
-            // If GAME.combats contains a combat with either the left or right element id being the Player's ID, then the Player is in combat
-            // If the Player is in combat, then use the Player's Object Position
-            // If the Player is not in combat, then use the Player's Position
-            
-            let playerPosition = new document.game.THREE.Vector3().copy(character.position()); // Vector3
-
-            if (Object.keys(document.game.GAME.combats).some(cID => document.game.GAME.combats[cID].left.id == pID || document.game.GAME.combats[cID].right.id == pID)) {
-                playerPosition = new document.game.THREE.Vector3().copy(character.object.position()); // We are in combat, use the Player's Object Position
-            }
-
-            // Offset the Player's Position by the Player's Height (This allows the Player Tag to be above the Player's Head)
-            playerPosition.y += character.height;
-
-            // Get the Player's Screen Position
-            const playerScreenPosition = this.world_to_screen(playerPosition); // Vector3
-
-            // If character is behind the camera, don't render the tag
-            player.tag.style.visibility = playerScreenPosition.z < 1.0 ? 'visible' : 'hidden';
-     
-            // Set Tag Color based on Friend Status
-            player.tag.style.color = character.is_friend ? 'green' : 'lightgray';
-
-            // Update the Player Tag's Position
-            player.tag.style.left = playerScreenPosition.x + 'px';
-            player.tag.style.top = playerScreenPosition.y + 'px';            
-        });
     }
 
 
-    loginOK() {
-        this.doRender = true;
+    Game_deletePlayer(playerID: string, playerData: Object) {
+        if (!this.PlayerCanvasText[playerID]) {
+            return;
+        }
+
+        document.game.GRAPHICS.scene.threeScene.remove(this.PlayerCanvasText[playerID]);
+        delete this.PlayerCanvasText[playerID];
     }
 
-    Network_logoutOK() {
-        this.doRender = false;
-        this.trackedPlayers = {};
-        this.PlayerTagContainer.innerHTML = "";
+
+    handlePluginState(state: boolean): void {
+        this.isPluginEnabled = state;
+
+        for (let playerID in this.PlayerCanvasText) {
+            this.PlayerCanvasText[playerID].visible = state;
+        }
     }
 
     handleHidePlayerSettingChange(state: boolean) {
-        if ( document.game.GRAPHICS.threeScene.getObjectByName(document.game.GAME.me.id) === undefined) return;
-        document.game.GRAPHICS.threeScene.getObjectByName(document.game.GAME.me.id).visible = !state;
-    }
-
-
-    world_to_screen(pos) {
-        var p = pos;
-        var screenPos = p.project(document.game.GRAPHICS.threeCamera());
-
-        screenPos.x = (screenPos.x + 1) / 2 * document.body.clientWidth;
-        screenPos.y = -(screenPos.y - 1) / 2 * document.body.clientHeight;
-
-        return screenPos;
     }
 
 }

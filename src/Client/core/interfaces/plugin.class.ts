@@ -24,9 +24,6 @@ export abstract class GenLitePlugin {
     PlayerInfo_updateXP?(xp: object): void; // TODO: provide proper type
     PlayerInfo_updateTooltip?(): void;
     PlayerInfo_updateSkills?(): void;
-    Game_combatUpdate?(update: any): void;
-    Game_createNPC?(e: any, t: any): void;
-    Game_deleteNPC?(e: any, t: any): void;
     PlayerHUD_setHealth?(current: number, max: number): void;
     Inventory_handleUpdatePacket?(packet: any): void;
     Bank_handlePacket?(packet: any): void;
@@ -38,6 +35,20 @@ export abstract class GenLitePlugin {
     OptimizedScene_intersects?(ray: any, list: any): void;
     Inventory__getAllContextOptions?(itemID, itemActions): void;
     Inventory__getContextOptionsBank?(slotId: number, invBankObject: invBankObject, contextMenu: contextMenu[]): void;
+
+
+
+    // Calls used in New Canvas Code
+    Game_combatUpdate?(update: any): void;
+    Game_createNPC?(e: any, t: any): void;
+    Game_deleteNPC?(e: any, t: any): void;
+    Game_createPlayer?(e: any, t: any): void;
+    Game_deletePlayer?(e: any, t: any): void;
+    Game_deleteItem?(e: any, t: any): void;
+    Character_update?(e: any, t: any, test: any): void;
+    ItemStack_update?(e: any, t: any, test: any): void;
+    NPC_update?(e: any, t: any, test: any): void;
+
 
     log(...args): void {
         if (process.env.NODE_ENV === 'production')
