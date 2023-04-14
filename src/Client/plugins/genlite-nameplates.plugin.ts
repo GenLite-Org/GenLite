@@ -144,6 +144,9 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
         this.NamePlates["Players"][character.id].position.y = character.worldPos.y + character.height;
         this.NamePlates["Players"][character.id].position.z = character.worldPos.z;
 
+        // Update Player Text Color (Based on Friend)
+        this.NamePlates["Players"][character.id].color = character.is_friend ? "#00BB27" : "#FFFFFF";
+
         // Update Player Text Scale
         if (!this.scaleDistance) {
             var scaleVector = new document.game.THREE.Vector3();
@@ -171,6 +174,7 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
     async NPC_update(camera: any, dt: any, npc: any): Promise<void> {
         if (!this.isPluginEnabled) { return; }
         if (!this.showNPCNames) { return; }
+
 
         if (!this.NamePlates["NPCs"][npc.id]) {
             this.NamePlates["NPCs"][npc.id] = {};
