@@ -102,6 +102,8 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
     async handleShowItemNamesSettingChange(value: boolean) {
         this.showItemNames = value;
 
+        this.log(this.NamePlates["Items"])
+
         for (var item in this.NamePlates["Items"]) {
             this.NamePlates["Items"][item].visible = value;
         }
@@ -176,6 +178,7 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
     async NPC_update(camera: any, dt: any, npc: any): Promise<void> {
         if (!this.isPluginEnabled) { return; }
         if (!this.showNPCNames) { return; }
+        if (!document.game.GAME.npcs[npc.id]) { return; }
 
 
         if (!this.NamePlates["NPCs"][npc.id]) {
@@ -346,6 +349,7 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
     async ItemStack_update(camera: any, dt: any, itemstack: any): Promise<void> {
         if (!this.isPluginEnabled) { return; }
         if (!this.showItemNames) { return; }
+        if (!document.game.GAME.item_stacks[itemstack.id]) { return; }
 
         let height = 0.25;
         for (const key in itemstack.item_info) {
