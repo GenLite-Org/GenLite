@@ -55,7 +55,7 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
 
 
     // Plugin Data
-    NamePlates = {
+    NamePlates: Object = {
         "Players": {},
         "NPCs": {},
         "Items": {}
@@ -111,6 +111,7 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
         if (!this.isPluginEnabled) { return; }
         if (!this.showPlayerNames) { return; }
         if (character == document.game.GAME.me.character) { return; }
+        if (!document.game.GAME.players[character.id]) { return; }
 
         if (!this.NamePlates["Players"][character.id]) {
             this.NamePlates["Players"][character.id] = new Text();
@@ -169,6 +170,7 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
         document.game.GRAPHICS.scene.threeScene.remove(this.NamePlates["Players"][playerID]);
         this.NamePlates["Players"][playerID].dispose();
         delete this.NamePlates["Players"][playerID]
+        
     }
 
     async NPC_update(camera: any, dt: any, npc: any): Promise<void> {
@@ -405,4 +407,46 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
         }
     }
 
+    async loginOK() {
+        for (const key in this.NamePlates["NPCs"]) {
+            // Remove the nameplate from the scene
+            document.game.GRAPHICS.scene.threeScene.remove(this.NamePlates["NPCs"][key].name);
+
+            if (this.NamePlates["NPCs"][key].attackText) {
+                document.game.GRAPHICS.scene.threeScene.remove(this.NamePlates["NPCs"][key].attackText);
+                this.NamePlates["NPCs"][key].attackText.dispose();
+                delete this.NamePlates["NPCs"][key].attackText;
+            }
+
+            // Dispose of the nameplate
+            this.NamePlates["NPCs"][key].name.dispose();
+            // Delete the nameplate from the NamePlates object
+            delete this.NamePlates["NPCs"][key];
+
+            this.NamePlates["NPCs"][key] = undefined;   
+        }
+
+        for (const key in this.NamePlates["Items"]) {
+            // Remove the nameplate from the scene
+            document.game.GRAPHICS.scene.threeScene.remove(this.NamePlates["Items"][key]);
+            // Dispose of the nameplate
+            this.NamePlates["Items"][key].dispose();
+            // Delete the nameplate from the NamePlates object
+            delete this.NamePlates["Items"][key];
+
+            this.NamePlates["Items"][key] = undefined;   
+        }
+
+
+        for (const key in this.NamePlates["Players"]) {
+            // Remove the nameplate from the scene
+            document.game.GRAPHICS.scene.threeScene.remove(this.NamePlates["Players"][key]);
+            // Dispose of the nameplate
+            this.NamePlates["Players"][key].dispose();
+            // Delete the nameplate from the NamePlates object
+            delete this.NamePlates["Players"][key];
+
+            this.NamePlates["Players"][key] = undefined;   
+        }
+    }
 }
