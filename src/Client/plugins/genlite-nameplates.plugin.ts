@@ -71,6 +71,16 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
 
     async handlePluginState(state: boolean) {
         this.isPluginEnabled = state;
+
+        if (state == false) {
+            this.handleShowPlayerNamesSettingChange(false, false);
+            this.handleShowNPCNamesSettingChange(false, false);
+            this.handleShowItemNamesSettingChange(false, false);
+        } else {
+            this.handleShowPlayerNamesSettingChange(this.showPlayerNames);
+            this.handleShowNPCNamesSettingChange(this.showNPCNames);
+            this.handleShowItemNamesSettingChange(this.showItemNames);
+        }
     }
 
     async handleScaleDistanceSettingChange(value: boolean) {
@@ -81,8 +91,10 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
         this.scaleFactor = value;
     }
 
-    async handleShowPlayerNamesSettingChange(value: boolean) {
-        this.showPlayerNames = value;
+    async handleShowPlayerNamesSettingChange(value: boolean, doChange: boolean = true) {
+        if (doChange) { 
+            this.showPlayerNames = value;
+        }
 
         // Loop through all players and set their visibility
         // This is preferred over constantly udpating the visibility of the text in Character_update()
@@ -91,18 +103,20 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
         }
     }
 
-    async handleShowNPCNamesSettingChange(value: boolean) {
-        this.showNPCNames = value;
+    async handleShowNPCNamesSettingChange(value: boolean, doChange: boolean = true) {
+        if (doChange) {
+            this.showNPCNames = value;
+        }
 
         for (var npc in this.NamePlates["NPCs"]) {
             this.NamePlates["NPCs"][npc].name.visible = value;
         }
     }
 
-    async handleShowItemNamesSettingChange(value: boolean) {
-        this.showItemNames = value;
-
-        this.log(this.NamePlates["Items"])
+    async handleShowItemNamesSettingChange(value: boolean, doChange: boolean = true) {
+        if (doChange) {
+            this.showItemNames = value;
+        }
 
         for (var item in this.NamePlates["Items"]) {
             this.NamePlates["Items"][item].visible = value;
@@ -122,7 +136,7 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
             this.NamePlates["Players"][character.id].fontSize = 0.15;
             this.NamePlates["Players"][character.id].anchorX = "center";
             this.NamePlates["Players"][character.id].anchorY = "bottom";
-            this.NamePlates["Players"][character.id].font = "https://raw.githubusercontent.com/KKonaOG/GenLite/main/Acme-Regular.ttf";
+            this.NamePlates["Players"][character.id].font = "https://raw.githubusercontent.com/KKonaOG/Old-GenLite/main/Acme-Regular.ttf";
 
             // Apply a slight outline to the text
             this.NamePlates["Players"][character.id].outlineColor = "#000000";
@@ -189,7 +203,7 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
             this.NamePlates["NPCs"][npc.id].name.fontSize = 0.15;
             this.NamePlates["NPCs"][npc.id].name.anchorX = "center";
             this.NamePlates["NPCs"][npc.id].name.anchorY = "bottom";
-            this.NamePlates["NPCs"][npc.id].name.font = "https://raw.githubusercontent.com/KKonaOG/GenLite/main/Acme-Regular.ttf";
+            this.NamePlates["NPCs"][npc.id].name.font = "https://raw.githubusercontent.com/KKonaOG/Old-GenLite/main/Acme-Regular.ttf";
 
             // Apply a slight outline to the text
             this.NamePlates["NPCs"][npc.id].name.outlineColor = "#000000";
@@ -229,7 +243,7 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
                     this.NamePlates["NPCs"][npc.id].attackText = new Text();
                     this.NamePlates["NPCs"][npc.id].attackText.text = " (Level " + npc.info.level + ")";
                     this.NamePlates["NPCs"][npc.id].attackText.color = color;
-                    this.NamePlates["NPCs"][npc.id].attackText.font = "https://raw.githubusercontent.com/KKonaOG/GenLite/main/Acme-Regular.ttf";
+                    this.NamePlates["NPCs"][npc.id].attackText.font = "https://raw.githubusercontent.com/KKonaOG/Old-GenLite/main/Acme-Regular.ttf";
                     this.NamePlates["NPCs"][npc.id].attackText.fontSize = 0.10;
                     this.NamePlates["NPCs"][npc.id].attackText.anchorX = "center";
                     this.NamePlates["NPCs"][npc.id].attackText.anchorY = "top";
@@ -287,7 +301,7 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
             this.NamePlates["NPCs"][npc.id].attackText = new Text();
             this.NamePlates["NPCs"][npc.id].attackText.text = " (Level " + npc.info.level + ")";
             this.NamePlates["NPCs"][npc.id].attackText.color = color;
-            this.NamePlates["NPCs"][npc.id].attackText.font = "https://raw.githubusercontent.com/KKonaOG/GenLite/main/Acme-Regular.ttf";
+            this.NamePlates["NPCs"][npc.id].attackText.font = "https://raw.githubusercontent.com/KKonaOG/Old-GenLite/main/Acme-Regular.ttf";
             this.NamePlates["NPCs"][npc.id].attackText.fontSize = 0.10;
             this.NamePlates["NPCs"][npc.id].attackText.anchorX = "center";
             this.NamePlates["NPCs"][npc.id].attackText.anchorY = "top";
@@ -359,7 +373,7 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
                 this.NamePlates["Items"][uid] = new Text();
                 this.NamePlates["Items"][uid].text = currItem.name;
                 this.NamePlates["Items"][uid].fontSize = 0.15;
-                this.NamePlates["Items"][uid].font = "https://raw.githubusercontent.com/KKonaOG/GenLite/main/Acme-Regular.ttf";
+                this.NamePlates["Items"][uid].font = "https://raw.githubusercontent.com/KKonaOG/Old-GenLite/main/Acme-Regular.ttf";
                 this.NamePlates["Items"][uid].color = '#ffffff';
                 this.NamePlates["Items"][uid].anchorX = 'center';
                 this.NamePlates["Items"][uid].anchorY = 'bottom';
