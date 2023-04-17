@@ -60,7 +60,8 @@ export class GenLiteXpCalculator extends GenLitePlugin {
     uiTabBody: HTMLElement = null;
 
     updateTimer: any = null;
-
+    skillContext: HTMLDivElement = null;
+    canvasHolder: HTMLDivElement = null;
 
 
     async init() {
@@ -74,6 +75,31 @@ export class GenLiteXpCalculator extends GenLitePlugin {
 
         // Create a Timer that will update the Skill Info every 5 seconds
         this.updateTimer = setInterval(this.updateUITrackingInformation.bind(this), 5000);
+
+        // Create a div element that should be used to display skill canvases, it will hold three skill canvases max, there should always be a canvas in the horizontal center of the screen
+        // It will always be displaying but should be transparent and act purely as a container for the skill canvases, it will be allowed to take up 50% of the screen width and 150px of the screen height
+        // The div element should be 25% from the left of the screen and 25% from the right of the screen
+        // The skill canvases will be 150px wide and 150px tall, they will be positioned in the center of the screen and will be 50px apart from each other
+        this.canvasHolder = document.createElement("div");
+        this.canvasHolder.style.position = "absolute";
+        this.canvasHolder.style.top = "50px";
+        this.canvasHolder.style.width = "50%";
+        this.canvasHolder.style.height = "150px";
+        this.canvasHolder.style.backgroundColor = "transparent";
+        this.canvasHolder.style.zIndex = "10000";
+        this.canvasHolder.style.pointerEvents = "none";
+        this.canvasHolder.style.display = "flex";
+        this.canvasHolder.style.flexDirection = "row";
+        this.canvasHolder.style.justifyContent = "center";
+        this.canvasHolder.style.fontFamily = "Acme, sans-serif";
+        this.canvasHolder.style.color = "white";
+
+
+        // Center the canvas holder
+        this.canvasHolder.style.left = "25%";
+        this.canvasHolder.style.right = "25%";
+
+        document.body.appendChild(this.canvasHolder);
     }
 
     updateUITrackingInformation() {
@@ -170,6 +196,7 @@ export class GenLiteXpCalculator extends GenLitePlugin {
         skillImage.style.width = "65px";
         skillImage.style.marginRight = "10px";
         skillImage.style.float = "left";
+        skillImage.id = "skillImage"
         skillImageGroup.appendChild(skillImage);
 
         // Skill Name
@@ -193,6 +220,7 @@ export class GenLiteXpCalculator extends GenLitePlugin {
 
         // XP Gained
         let xpGained = document.createElement("span");
+        xpGained.id = "xpGained";
         xpGained.innerText = `XP Tracked: ${skill.startXP == 0 ? 0 : this.prettyPrintNumber(((piSkill.xp - skill.startXP) / 10))}`;
         skillInfoGroup.appendChild(xpGained);
 
@@ -204,6 +232,7 @@ export class GenLiteXpCalculator extends GenLitePlugin {
         }
 
         let xpHour = document.createElement("span");
+        xpHour.id = "xpHour";
         xpHour.innerText = `XP/Hour: ${this.prettyPrintNumber(xpRate)}`;
         skillInfoGroup.appendChild(xpHour);
 
@@ -217,12 +246,14 @@ export class GenLiteXpCalculator extends GenLitePlugin {
 
         // XP Left
         let xpLeft = document.createElement("span");
-        xpLeft.innerText = `XP Left: ${this.prettyPrintNumber(piSkill.tnl)}`;
+        xpLeft.id = "xpLeft";
+        xpLeft.innerText = `XP Left: ${this.prettyPrintNumber(piSkill.tnl / 10)}`;
         skillInfoNewLine.appendChild(xpLeft);
 
         // Actions
         let actions = document.createElement("span");
         actions.innerText = `Actions: ${this.prettyPrintNumber(skill.actionsToNext)}`;
+        actions.id = "actions";
         actions.style.marginLeft = "10px";
         skillInfoNewLine.appendChild(actions);
 
@@ -234,12 +265,14 @@ export class GenLiteXpCalculator extends GenLitePlugin {
         progressBar.style.marginTop = "10px";
         progressBar.style.marginBottom = "10px";
         progressBar.style.overflow = "hidden";
+        progressBar.id = "progressBar";
         skillInfoContainer.appendChild(progressBar);
 
         let progressBarFill = document.createElement("div");
         progressBarFill.style.width = `${piSkill.percent}%`;
         progressBarFill.style.height = "100%";
         progressBarFill.style.backgroundColor = "green";
+        progressBarFill.id = "progressBarFill";
         progressBar.appendChild(progressBarFill);
 
         // Show the percentage of the progress bar (centered in the progress bar)
@@ -248,6 +281,7 @@ export class GenLiteXpCalculator extends GenLitePlugin {
         progressBarPercent.style.position = "absolute";
         progressBarPercent.style.left = "45%";
         progressBarPercent.style.fontSize = "0.9em";
+        progressBarPercent.id = "progressBarPercent";
         progressBarFill.appendChild(progressBarPercent);
 
         // Show the current level (left in the progress bar)
@@ -256,6 +290,7 @@ export class GenLiteXpCalculator extends GenLitePlugin {
         progressBarLevel.style.position = "absolute";
         progressBarLevel.style.left = "15px";
         progressBarLevel.style.fontSize = "0.9em";
+        progressBarLevel.id = "progressBarLevel";
         progressBarFill.appendChild(progressBarLevel);
 
         // Show the next level (right in the progress bar)
@@ -264,6 +299,7 @@ export class GenLiteXpCalculator extends GenLitePlugin {
         progressBarNextLevel.style.position = "absolute";
         progressBarNextLevel.style.right = "15px";
         progressBarNextLevel.style.fontSize = "0.9em";
+        progressBarNextLevel.id = "progressBarNextLevel";
         progressBarFill.appendChild(progressBarNextLevel);
         
         // When the user hovers over the progress bar, show a tool tip with the time remaining to the next level
@@ -298,6 +334,7 @@ export class GenLiteXpCalculator extends GenLitePlugin {
         buttonDiv.style.flexDirection = "row";
         buttonDiv.style.alignItems = "center";
         buttonDiv.style.justifyContent = "space-evenly";
+        buttonDiv.id = "buttonDiv";
         skillInfoContainer.appendChild(buttonDiv);
 
 
@@ -352,7 +389,178 @@ export class GenLiteXpCalculator extends GenLitePlugin {
 
         this.skillsList[skillName].trackerReference = skillTrackerReference;
 
+        // Add a check to see if the user right clicks on the skill info
+        skillInfo.oncontextmenu = (e) => {
+            e.preventDefault();
 
+            if (this.skillContext) {
+                this.skillContext.remove();
+            }
+
+            // Add an option to "Add to Canvas" if the user right clicks on the skill info
+            this.skillContext = document.createElement("div");
+            this.skillContext.innerText = "Add to Canvas";
+            this.skillContext.style.position = "absolute";
+            this.skillContext.style.top = e.clientY + "px";
+            this.skillContext.style.left = e.clientX + "px";
+            this.skillContext.style.backgroundColor = "#383838";
+            this.skillContext.style.border = "1px solid black";
+            this.skillContext.style.fontFamily = "Acme";
+            this.skillContext.style.color = "white";
+            this.skillContext.style.padding = "5px";
+            this.skillContext.style.cursor = "pointer";
+            this.skillContext.style.zIndex = "10001";
+            this.skillContext.style.borderRadius = "10px";
+            this.skillContext.style.boxShadow = "0px 0px 2px 0px black";
+            this.skillContext.onclick = () => {
+                // Place a copy of the skill info on the canvas
+  
+                let newTrackerReference = this.createSkillInfoCanvas(skillName, skillInfo, skillTrackerReference);
+
+                // set the the tracker reference to null so that the skill info can be removed from the canvas
+                this.skillsList[skillName].trackerReference = newTrackerReference;
+
+                // Remove the skill info from the UI
+                skillInfo.remove();
+
+                this.skillContext.remove();
+            }
+
+            document.body.appendChild(this.skillContext);
+        }
+
+        document.addEventListener("click", (e) => {
+            if (e.target !== this.skillContext) {
+                this.skillContext.remove();
+            }
+        });
+
+
+    }
+
+    createSkillInfoCanvas(skillName, skillUI, trackerReference) {
+        let skillInfoCopy = skillUI.cloneNode(true) as HTMLDivElement;
+        skillInfoCopy.style.width = "225px";
+        skillInfoCopy.style.height = "150px";
+
+        // Enable cursor events on the copy
+        skillInfoCopy.style.pointerEvents = "auto";
+        
+        let firstChild = skillInfoCopy.children[0] as HTMLElement;
+        firstChild.style.backgroundColor = "#1e1e1ebf";
+
+        // Remove the image from the copy
+        let skillImage = skillInfoCopy.querySelector("img");
+        skillImage.remove();
+
+        // Remove all of the buttons from the copy
+        let buttons = skillInfoCopy.querySelectorAll("button");
+        buttons.forEach((button) => {
+            button.remove();
+        });
+
+        // Rereference the skill info elements to the copy
+        trackerReference.container = skillInfoCopy;
+        trackerReference.xpGained = skillInfoCopy.querySelector("#xpGained");
+        trackerReference.xpHour = skillInfoCopy.querySelector("#xpHour");
+        trackerReference.xpLeft = skillInfoCopy.querySelector("#xpLeft");
+        trackerReference.actions = skillInfoCopy.querySelector("#actions");
+        trackerReference.progressBar = skillInfoCopy.querySelector("#progressBar");
+        trackerReference.progressBarFill = skillInfoCopy.querySelector("#progressBarFill");
+        trackerReference.progressBarPercent = skillInfoCopy.querySelector("#progressBarPercent");
+        trackerReference.progressBarLevel = skillInfoCopy.querySelector("#progressBarLevel");
+        trackerReference.progressBarNextLevel = skillInfoCopy.querySelector("#progressBarNextLevel");
+
+
+
+        // Create a div to hold progressBarFill elements
+        let progressBarFillContainer = document.createElement("div");
+        progressBarFillContainer.style.width = "100%";
+
+        // The current container for progressBarLevel, progressBarNextLevel, and progressBarPercent is progressBarFill, so we need to instead make their parent progressBar
+        trackerReference.progressBarLevel.parentElement.removeChild(trackerReference.progressBarLevel);
+        trackerReference.progressBarNextLevel.parentElement.removeChild(trackerReference.progressBarNextLevel);
+        trackerReference.progressBarPercent.parentElement.removeChild(trackerReference.progressBarPercent);
+        trackerReference.progressBarFill.parentElement.removeChild(trackerReference.progressBarFill);
+
+
+        // Add the progressBarFill elements to the progressBarFillContainer
+        progressBarFillContainer.appendChild(trackerReference.progressBarLevel);
+        progressBarFillContainer.appendChild(trackerReference.progressBarPercent);
+        progressBarFillContainer.appendChild(trackerReference.progressBarNextLevel);
+        progressBarFillContainer.appendChild(trackerReference.progressBarFill);
+
+        // Adjust the z-index of the progressBarFill elements
+        trackerReference.progressBarLevel.style.zIndex = "999";
+        trackerReference.progressBarNextLevel.style.zIndex = "999";
+        trackerReference.progressBarPercent.style.zIndex = "999";
+
+        trackerReference.progressBarLevel.style.position = "relative";
+        trackerReference.progressBarLevel.style.left = "0px";
+        trackerReference.progressBarLevel.style.float = "left";
+
+        trackerReference.progressBarNextLevel.style.position = "relative";
+        trackerReference.progressBarNextLevel.style.left = "0px";
+        trackerReference.progressBarNextLevel.style.float = "right";
+
+        trackerReference.progressBarPercent.style.position = "relative";
+
+        // Remove left from progressBarPercent
+        trackerReference.progressBarPercent.style.left = "0px";
+
+
+        // Progress Bar align text center
+        trackerReference.progressBar.style.textAlign = "center";
+
+        trackerReference.progressBar.appendChild(progressBarFillContainer);
+
+        // Fix progressBarFill height, top, z-index, left, and position
+        trackerReference.progressBarFill.style.height = "19px";
+        trackerReference.progressBarFill.style.top = "-20px";
+        trackerReference.progressBarFill.style.zIndex = "5";
+        trackerReference.progressBarFill.style.left = "0px";
+        trackerReference.progressBarFill.style.position = "relative";
+        
+        this.canvasHolder.appendChild(skillInfoCopy);
+
+
+        // Add a check to see if the user right clicks on the skill info
+        skillInfoCopy.oncontextmenu = (e) => {
+            e.preventDefault();
+
+            if (this.skillContext) {
+                this.skillContext.remove();
+            }
+
+            // Add an option to "Add to Canvas" if the user right clicks on the skill info
+            this.skillContext = document.createElement("div");
+            this.skillContext.innerText = "Remove from Canvas";
+            this.skillContext.style.position = "absolute";
+            this.skillContext.style.top = e.clientY + "px";
+            this.skillContext.style.left = e.clientX + "px";
+            this.skillContext.style.backgroundColor = "#383838";
+            this.skillContext.style.border = "1px solid black";
+            this.skillContext.style.fontFamily = "Acme";
+            this.skillContext.style.color = "white";
+            this.skillContext.style.padding = "5px";
+            this.skillContext.style.cursor = "pointer";
+            this.skillContext.style.zIndex = "10001";
+            this.skillContext.style.borderRadius = "10px";
+            this.skillContext.style.boxShadow = "0px 0px 2px 0px black";
+            this.skillContext.onclick = () => {
+                
+                // Remove the skill info from the UI
+                skillInfoCopy.remove();
+                this.skillContext.remove();
+
+                // Create a new skill info element and add it to the UI
+                this.createSkillInfo(skillName);
+            }
+
+            document.body.appendChild(this.skillContext);
+        }
+
+        return trackerReference;
     }
 
     updateSkillInfo(skillName) {
@@ -377,7 +585,7 @@ export class GenLiteXpCalculator extends GenLitePlugin {
         skillInfo.xpHour.innerText = `XP/Hour: ${this.prettyPrintNumber(xpRate)}`;
 
         // XP Left
-        skillInfo.xpLeft.innerText = `XP Left: ${this.prettyPrintNumber(piSkill.tnl)}`;
+        skillInfo.xpLeft.innerText = `XP Left: ${this.prettyPrintNumber(piSkill.tnl / 10)}`;
 
         // Actions
         skillInfo.actions.innerText = `Actions: ${this.prettyPrintNumber(skill.actionsToNext)}`;

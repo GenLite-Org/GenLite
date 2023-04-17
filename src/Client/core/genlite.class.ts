@@ -48,11 +48,12 @@ export class GenLite {
         this.installHook('Network', 'disconnect', this.hookDisconnect)
         this.installHook('Network', 'action');
         this.installHook('Network', 'handle');
-        this.installHook('Camera', 'update');
         this.installHook('PlayerInfo', 'updateXP');
         this.installHook('PlayerInfo', 'updateTooltip');
         this.installHook('PlayerInfo', 'updateSkills');
         this.installHook('Game', 'combatUpdate');
+
+        this.installHook('Character', 'update');
         this.installHook('PlayerHUD', 'setHealth');
         this.installHook('Inventory', 'handleUpdatePacket');
         this.installHook('Inventory', '_getContextOptionsBank');
@@ -70,6 +71,14 @@ export class GenLite {
 
         this.installHook('Friends', 'getContextOptionsFriends');
         this.installHook('Friends', '_populateFriends');
+
+        // Three.js Canvas Text Hooks
+        this.installHook('Camera', 'update');
+        this.installHook('Game', 'deleteNPC');
+        this.installHook('Game', 'deletePlayer');
+        this.installHook('Game', 'deleteItem');
+        this.installHook('ItemStack', 'update');
+        this.installHook('NPC', 'update');
 
     }
 

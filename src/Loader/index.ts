@@ -108,7 +108,7 @@ if (genfanadLastModified > genfanadUpdateTimestampDate) {
     xhrClientJS.send();
 }
 
-const needsUpdate = genliteLastModified > genliteUpdateTimestampDate;
+const needsUpdate = (genliteLastModified > genliteUpdateTimestampDate) || (localStorage.getItem('GenLite.Client') == null || localStorage.getItem('GenLite.Client') == undefined);
 
 if (needsUpdate) {
     // Wait for the DOM to get to a modifiable state
@@ -262,6 +262,34 @@ if (needsUpdate) {
                         window.location.reload();
                     }, 100);
                 }
+
+                // If the request fails, we'll just reload the page
+                else {
+                    // Update the warning text
+                    warningText.innerText = `
+                    An error occurred while trying to update GenLite. Please try again later. 
+                    Please report this issue in the GenLite Discord server with following information:\n\n
+                    Error Code: ${xhrGenLiteJS.status}`
+                    if (xhrGenLiteJS.statusText) {
+                        warningText.innerText += `\nError Status: ${xhrGenLiteJS.statusText}`
+                    }
+                    warningText.innerText += `
+                    Error Response: ${xhrGenLiteJS.responseText}\n
+                    Target URL: ${targetForkDownload}\n
+                    Target Fork: \n${targetFork}\n
+                    \nIf you continue to see this message, please clear your browser cache and try again.\n`
+
+                    // Replace the okay and cancel buttons with a reload button
+                    okayButton.innerText = 'Try Again';
+                    okayButton.onclick = (e) => {
+                        window.location.reload();
+                    }
+                    cancelButton.innerText = 'Continue Anyway';
+                    cancelButton.onclick = (e) => {
+                        modal.style.display = 'none';
+                    }
+                }
+
             }
             xhrGenLiteJS.send();
         };
@@ -294,7 +322,71 @@ if (needsUpdate) {
     // Retrieve GenLite.Client and GenLite.Version from local storage
     let genliteJS = localStorage.getItem('GenLite.Client');
     let genliteVersion = localStorage.getItem('GenLite.Version');
+    let genliteFork = localStorage.getItem('GenLite.Fork');
 
+    // Create a Select element (simple dropdown menu) with the label "GenLite Fork:" it will be appened to the #loginversion element
+    let select = document.createElement('select');
+    select.style.border = '1px solid #000';
+    select.style.borderRadius = '0.25em';
+    select.style.background = '#fff';
+    select.style.color = '#000';
+    select.style.cursor = 'pointer';
+    select.style.outline = 'none';
+
+    // Create a label for the select element
+    let label = document.createElement('label');
+    label.innerText = 'GenLite Fork: ';
+
+    // Create a default option
+    let defaultOption = document.createElement('option');
+    // Set the default option to the current fork
+    defaultOption.innerText = genliteFork;
+    defaultOption.value = genliteFork;
+    defaultOption.selected = true;
+    select.appendChild(defaultOption);
+
+    // Add an event listener to the select element
+    select.addEventListener('change', (e: Event) => {
+        let target  = e.target as HTMLSelectElement;
+        genliteFork = target.value;
+        localStorage.setItem('GenLite.Fork', genliteFork);
+        
+        // Delete all other created localStorages
+        localStorage.removeItem('GenLite.Client');
+        localStorage.removeItem('GenLite.Version');
+        localStorage.removeItem('GenLite.UpdateTimestamp');
+
+        window.location.reload();
+    });
+    
+    let xhrForks = new XMLHttpRequest();
+    xhrForks.open("GET", "https://api.github.com/repos/Retoxified/GenLite/forks"); // Note: This is synchronous
+    xhrForks.onload = function () {
+        const availableForks = JSON.parse(xhrForks.responseText);
+        for (let i = 0; i < availableForks.length; i++) {
+            if (availableForks[i].owner.login == genliteFork) {
+                continue; // Skip the current fork
+            }
+
+            // Verify that the fork has a genliteClient.js file in https://raw.githubusercontent.com/dpeGit/GenLite/release/dist/genliteClient.user.js
+            let forkURL = `https://raw.githubusercontent.com/${availableForks[i].owner.login}/GenLite/release/dist/genliteClient.user.js`;
+            let xhrFork = new XMLHttpRequest();
+            xhrFork.open("GET", forkURL);
+            xhrFork.onload = function () {
+                let fork = availableForks[i];
+                if (xhrFork.status == 200) {
+                    let option = document.createElement('option');
+                    option.value = fork.owner.login;
+                    option.innerText =  fork.owner.login;
+                    select.appendChild(option);
+                }
+            }
+            xhrFork.send();
+        }
+    }
+    xhrForks.send();
+
+    
     // Wait for the page to load and be ready
     window.addEventListener('load', function () {
         // Load is fired off when the page is ready
@@ -310,6 +402,14 @@ if (needsUpdate) {
         // Append the version span to the loginversion span
         loginVersion.appendChild(version);
 
+
+        // The select element is created and appended to the loginversion span semi-asynchronously
+        loginVersion.appendChild(label);
+        loginVersion.appendChild(select);
+
+        // Update #login__client-info margin-top to 4em to account for the new elements
+        let loginClientInfo = document.getElementById('login__client-info');
+        loginClientInfo.style.marginTop = '4em';
     });
 
     // Execute genliteJS code using eval

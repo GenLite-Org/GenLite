@@ -45,7 +45,6 @@ class GenLiteMessageBuffer {
     }
 
     public hook() {
-        let plugin = this;
         this.buffer.add = this.overrideAdd.bind(this.buffer, this);
     }
 
@@ -278,7 +277,7 @@ export class GenLiteChatPlugin extends GenLitePlugin {
         });
         document.genlite.database.add((db) => {
             if (db.objectStoreNames.contains('profiles')) return;
-            let store = db.createObjectStore('profiles', {
+            db.createObjectStore('profiles', {
                 keyPath: 'name',
             });
         });
@@ -556,7 +555,7 @@ export class GenLiteChatPlugin extends GenLitePlugin {
         }
 
         search.oninput = function (e) {
-            let value = search.value.trim().toLowerCase();
+            // let value = search.value.trim().toLowerCase();
             // TODO
         }
 
