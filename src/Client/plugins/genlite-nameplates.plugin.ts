@@ -394,6 +394,13 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
                     this.NamePlates["Items"][uid].material[1].depthTest = false;
                     this.NamePlates["Items"][uid].material[1].depthWrite = false;
                 });
+            } else {
+                // Update the Text with an x amount of items (number of ids associated with currItem)
+                if (Object.keys(currItem.ids).length > 1) {
+                    this.NamePlates["Items"][uid].text = currItem.name + " x" + Object.keys(currItem.ids).length;
+                } else {
+                    this.NamePlates["Items"][uid].text = currItem.name;
+                }
             }
             // Update Scaling
             if (!this.scaleDistance) {
