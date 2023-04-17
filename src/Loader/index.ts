@@ -275,8 +275,7 @@ if (needsUpdate) {
                     }
                     warningText.innerText += `
                     Error Response: ${xhrGenLiteJS.responseText}\n
-                    Target URL: ${targetForkDownload}\n
-                    Target Fork: \n${targetFork}\n
+                    Target URL: ${githubConfig.distUrl}\n
                     \nIf you continue to see this message, please clear your browser cache and try again.\n`
 
                     // Replace the okay and cancel buttons with a reload button
