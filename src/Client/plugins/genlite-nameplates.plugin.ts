@@ -178,6 +178,10 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
         this.NamePlates["Players"][character.id].quaternion.copy(camera.quaternion);
     }
 
+    async NPC_intersects(ray: any, list: any, test: any): Promise<void> {
+        this.log("NPC_intersects", ray, list, test);
+    }
+
     async Game_deletePlayer(playerID: any, player: any): Promise<void> {
         if (!this.NamePlates["Players"][playerID]) {
             return;
