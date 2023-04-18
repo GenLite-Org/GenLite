@@ -70,7 +70,7 @@ export class GenLiteItemDisplays extends GenLitePlugin {
             let span = document.createElement('span');
             div.appendChild(span);
             span.classList.add("new_ux-item-quantity-span");
-            span.classList.add("genlite_item_extras")
+            span.classList.add("genlite_item_extras");
             span.innerHTML = "samual smells";
             /* code reuse compatibility */
             if (slot.item_div)

@@ -11,21 +11,21 @@
     You should have received a copy of the GNU General Public License along with Foobar. If not, see <https://www.gnu.org/licenses/>.
 */
 
-import {GenLitePlugin} from '../core/interfaces/plugin.class';
+import { GenLitePlugin } from '../core/interfaces/plugin.class';
 
 export class GenLiteSoundNotification extends GenLitePlugin {
     static pluginName = 'GenLiteSoundNotification';
 
     doHealthCheck: boolean = false;
-    healthThreshold : number = 1;
+    healthThreshold: number = 1;
 
     doInvCheck: boolean = false;
-    invThreshold : number = 1;
+    invThreshold: number = 1;
     prevSlotsUsed = null;
 
     overrideIGNVolume: boolean = false;
     initialIGNVolumeSet: boolean = true; // Sorry I know this is jank but I'm tired and couldn't think of a better way to do it
-    overrideVolume : number = 1;
+    overrideVolume: number = 1;
 
     genliteSoundListener;
     genliteSFXPlayer;
@@ -33,7 +33,7 @@ export class GenLiteSoundNotification extends GenLitePlugin {
 
 
     // Plugin Settings
-    pluginSettings : Settings = {
+    pluginSettings: Settings = {
         "Low Health Sound": {
             type: "checkbox",
             oldKey: "GenLite.LowHealthSound.Enable",
@@ -55,7 +55,7 @@ export class GenLiteSoundNotification extends GenLitePlugin {
             oldKey: "GenLite.InvCheck.Enable",
             value: this.doInvCheck,
             stateHandler: this.handleInvCheckEnableDisable.bind(this),
-            children : {
+            children: {
                 "Inventory Threshold": {
                     type: "range",
                     oldKey: "GenLite.InvThreshold.0",

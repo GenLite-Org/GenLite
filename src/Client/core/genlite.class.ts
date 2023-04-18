@@ -32,6 +32,8 @@ export class GenLite {
     database: GenLiteDatabasePlugin;
     ui: GenLiteUIPlugin;
 
+    logged = false;
+
     /** We allow setting "any field, to anything" in order to load core features such as genlite.notifications */
     [key: string]: any;
 
@@ -40,12 +42,13 @@ export class GenLite {
     }
 
     async init() {
+        ("installing hooks");
         this.installHookNoProto('PhasedLoadingManager', 'start_phase', this.hookPhased);
         this.installHookNoProto('WORLDMANAGER', 'loadSegment')
         this.installHookNoProto('WORLDMANAGER', 'createSegment')
 
-        this.installHook('Network', 'logoutOK');
-        this.installHook('Network', 'disconnect', this.hookDisconnect)
+        this.installHook('Network', 'logoutOK', this.hookLogoutOK);
+        this.installHook('Network', 'disconnect', this.hookDisconnect);
         this.installHook('Network', 'action');
         this.installHook('Network', 'handle');
         this.installHook('Camera', 'update');
@@ -70,12 +73,13 @@ export class GenLite {
 
         this.installHook('Friends', 'getContextOptionsFriends');
         this.installHook('Friends', '_populateFriends');
+        this.hookInventoryContextMenu()
+
 
     }
 
     onUIInitialized() {
         this.hook('initializeUI');
-        this.hookInventoryContextMenu()
     }
 
 
@@ -92,17 +96,25 @@ export class GenLite {
     }
 
     hookPhased(fnName: string, ...args: Array<unknown>) {
-        if (args[0] === "game_loaded") {
+        if (args[0] === "game_loaded" && !this.logged) {
             this.hook('loginOK', args);
+            this.logged = true;
+
 
             if (!this.ui.hasInitialized) {
+                this.onUIInitialized();
                 this.pluginLoader.postInit();
+
             }
         }
     }
 
-    hookDisconnect(fnName: string, ...args: Array<unknown>) {
+    hookLogoutOK(fnName: string, ...args: Array<unknown>) {
+        this.logged = false;
         this.hook('Network_logoutOK', args);
+    }
+    hookDisconnect(fnName: string, ...args: Array<unknown>) {
+        this.hookLogoutOK(fnName, ...args);
     }
 
     /* override the client's function referance after hooking */
