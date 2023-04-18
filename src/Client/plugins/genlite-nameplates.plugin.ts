@@ -22,6 +22,7 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
     showPlayerNames: boolean = false;
     showNPCNames: boolean = false;
     showItemNames: boolean = false;
+    invertTagging: boolean = false;
 
     pluginSettings: Settings = {
         "Global Scaling": {
@@ -44,7 +45,14 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
         "Show NPC Names": {
             type: 'checkbox',
             value: this.showNPCNames,
-            stateHandler: this.handleShowNPCNamesSettingChange.bind(this)
+            stateHandler: this.handleShowNPCNamesSettingChange.bind(this),
+            children: {
+                "Invert Tagging": {
+                    type: 'checkbox',
+                    value: this.invertTagging,
+                    stateHandler: this.handleInvertTaggingSettingChange.bind(this)
+                }
+            }
         },
         "Show Item Names": {
             type: 'checkbox',
@@ -61,8 +69,13 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
         "Items": {}
     };
 
+    untaggedNPCs: Array<string> = [];
+
     async init() {
         document.genlite.registerPlugin(this);
+
+        // Parse the JSON array stored in localStorage and convert it to array of strings (the NPC names to hide)
+        this.untaggedNPCs = JSON.parse(localStorage.getItem("GenLite.NamePlates.HiddenNPCs") || "[]");
     }
 
     async postInit() {
@@ -92,7 +105,7 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
     }
 
     async handleShowPlayerNamesSettingChange(value: boolean, doChange: boolean = true) {
-        if (doChange) { 
+        if (doChange) {
             this.showPlayerNames = value;
         }
 
@@ -122,6 +135,31 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
             this.NamePlates["Items"][item].visible = value;
         }
     }
+
+    async handleInvertTaggingSettingChange(value: boolean) {
+        this.invertTagging = value;
+
+        if (value) {
+            // Hide all NPCs that are not in the untaggedNPCs array
+            for (var npc in this.NamePlates["NPCs"]) {
+                if (this.untaggedNPCs.indexOf(this.NamePlates["NPCs"][npc].name.text) == -1) {
+                    this.NamePlates["NPCs"][npc].name.visible = false;
+                } else {
+                    this.NamePlates["NPCs"][npc].name.visible = true;
+                }
+            }
+        } else {
+            // Show all NPCs that are not in the untaggedNPCs array
+            for (var npc in this.NamePlates["NPCs"]) {
+                if (this.untaggedNPCs.indexOf(this.NamePlates["NPCs"][npc].name.text) == -1) {
+                    this.NamePlates["NPCs"][npc].name.visible = true;
+                } else {
+                    this.NamePlates["NPCs"][npc].name.visible = false;
+                }
+            }
+        }
+    }
+
 
     async Character_update(camera: any, dt: any, character: any): Promise<void> {
         if (!this.isPluginEnabled) { return; }
@@ -168,7 +206,7 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
         if (!this.scaleDistance) {
             var scaleVector = new document.game.THREE.Vector3();
             var scale = scaleVector.subVectors(this.NamePlates["Players"][character.id].position, camera.position).length() / this.scaleFactor;
-            this.NamePlates["Players"][character.id].scale.set(scale, scale, scale);    
+            this.NamePlates["Players"][character.id].scale.set(scale, scale, scale);
         } else {
             // Scale the text to slowly get smaller as the player moves away from the camera;
             this.NamePlates["Players"][character.id].scale.set(this.scaleFactor, this.scaleFactor, this.scaleFactor);
@@ -178,8 +216,104 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
         this.NamePlates["Players"][character.id].quaternion.copy(camera.quaternion);
     }
 
-    async NPC_intersects(ray: any, list: any, test: any): Promise<void> {
-        this.log("NPC_intersects", ray, list, test);
+    NPC_intersects(ray: any, list: any, NPC: any): void {
+        // Only log if the number of elements in the list is greater than 1
+        if (list.length == 0) { return; }
+
+        // Create a Map to store the actions
+        let NPCs = new Map();
+
+        for (let i = 0; i < list.length; i++) {
+            // Get the action object
+            let actionObject = list[i].object;
+
+            if (actionObject.type === "player") {
+                continue;
+            }
+
+            // See if the object is already in the set
+            if (NPCs.has(actionObject)) {
+                // Push the action to the existing array
+                NPCs.get(actionObject).push(list[i]);
+            }
+            else {
+                // Create a new array and push the action
+                NPCs.set(actionObject, [list[i]]);
+            }
+        }
+
+        NPCs.forEach((value, key) => {
+            // Remove any existing "Tag" or "UnTag" options from value
+
+
+            // If the NPC's nameplate is not visible, then don't add the option to the list
+            if (!this.NamePlates["NPCs"][key.id].name.visible && !value.some((action: any) => action.text === "Tag")) {
+                // Get distance to the NPC
+                list.push({
+                    object: key,
+                    distance: value[0].distance,
+                    priority: -4,
+                    text: "Tag",
+                    action: () => {
+                        if (this.invertTagging) {
+                            // Remove the "UnTag" option from the list
+                            list.splice(list.findIndex((action: any) => action.text === "Tag"), 1);
+
+                            // Add the NPC to the list of hidden NPCs (by name)
+                            this.untaggedNPCs.push(key.info.name);
+
+                            // Update the localStorage with the new list of hidden NPCs
+                            localStorage.setItem("GenLite.NamePlates.HiddenNPCs", JSON.stringify(this.untaggedNPCs));
+                        } else {
+                            // Remove the "Tag" option from the list
+                            list.splice(list.findIndex((action: any) => action.text === "Tag"), 1);
+
+                            // Remove the NPC from the list of hidden NPCs
+                            this.untaggedNPCs.splice(this.untaggedNPCs.findIndex((name: any) => name === key.info.name), 1);
+
+                            // Update the local storage
+                            localStorage.setItem("GenLite.NamePlates.HiddenNPCs", JSON.stringify(this.untaggedNPCs));
+                        }
+
+                        // Update the NPC's nameplate visibility
+                        this.handleInvertTaggingSettingChange(this.invertTagging);
+                    }
+                });
+
+            } else if (this.NamePlates["NPCs"][key.id].name.visible && !value.some((action: any) => action.text === "UnTag")) {
+                list.push({
+                    object: key,
+                    distance: value[0].distance,
+                    priority: -4,
+                    text: "UnTag",
+                    action: () => {
+                        if (!this.invertTagging) {
+                            // Remove the "UnTag" option from the list
+                            list.splice(list.findIndex((action: any) => action.text === "UnTag"), 1);
+
+                            // Add the NPC to the list of hidden NPCs (by name)
+                            this.untaggedNPCs.push(key.info.name);
+
+                            // Update the localStorage with the new list of hidden NPCs
+                            localStorage.setItem("GenLite.NamePlates.HiddenNPCs", JSON.stringify(this.untaggedNPCs));
+                        } else {
+                            // Remove the "Tag" option from the list
+                            list.splice(list.findIndex((action: any) => action.text === "UnTag"), 1);
+
+                            // Remove the NPC from the list of hidden NPCs
+                            this.untaggedNPCs.splice(this.untaggedNPCs.findIndex((name: any) => name === key.info.name), 1);
+
+                            // Update the local storage
+                            localStorage.setItem("GenLite.NamePlates.HiddenNPCs", JSON.stringify(this.untaggedNPCs));
+                        }
+
+                        // Update the NPC's nameplate visibility
+                        this.handleInvertTaggingSettingChange(this.invertTagging);
+                    }
+                });
+            }
+
+        });
     }
 
     async Game_deletePlayer(playerID: any, player: any): Promise<void> {
@@ -190,7 +324,7 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
         document.game.GRAPHICS.scene.threeScene.remove(this.NamePlates["Players"][playerID]);
         this.NamePlates["Players"][playerID].dispose();
         delete this.NamePlates["Players"][playerID]
-        
+
     }
 
     async NPC_update(camera: any, dt: any, npc: any): Promise<void> {
@@ -203,6 +337,21 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
             this.NamePlates["NPCs"][npc.id] = {};
             this.NamePlates["NPCs"][npc.id].name = new Text();
             this.NamePlates["NPCs"][npc.id].name.text = npc.name();
+
+            // Determine if the NPC is hidden
+            if (this.untaggedNPCs.includes(npc.name())) {
+                if (this.invertTagging) {
+                    this.NamePlates["NPCs"][npc.id].name.visible = true;
+                } else {
+                    this.NamePlates["NPCs"][npc.id].name.visible = false;
+                }
+            } else {
+                if (this.invertTagging) {
+                    this.NamePlates["NPCs"][npc.id].name.visible = false;
+                } else {
+                    this.NamePlates["NPCs"][npc.id].name.visible = true;
+                }
+            }
             this.NamePlates["NPCs"][npc.id].name.color = "#FFFF00";
             this.NamePlates["NPCs"][npc.id].name.fontSize = 0.15;
             this.NamePlates["NPCs"][npc.id].name.anchorX = "center";
@@ -277,6 +426,11 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
                     }
                 });
             });
+        }
+
+        // If not visible, don't update
+        if (!this.NamePlates["NPCs"][npc.id].name.visible) {
+            return;
         }
 
         this.NamePlates["NPCs"][npc.id].name.position.x = npc.worldPos.x;
@@ -452,7 +606,7 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
             // Delete the nameplate from the NamePlates object
             delete this.NamePlates["NPCs"][key];
 
-            this.NamePlates["NPCs"][key] = undefined;   
+            this.NamePlates["NPCs"][key] = undefined;
         }
 
         for (const key in this.NamePlates["Items"]) {
@@ -463,7 +617,7 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
             // Delete the nameplate from the NamePlates object
             delete this.NamePlates["Items"][key];
 
-            this.NamePlates["Items"][key] = undefined;   
+            this.NamePlates["Items"][key] = undefined;
         }
 
 
@@ -475,7 +629,7 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
             // Delete the nameplate from the NamePlates object
             delete this.NamePlates["Players"][key];
 
-            this.NamePlates["Players"][key] = undefined;   
+            this.NamePlates["Players"][key] = undefined;
         }
     }
 }
