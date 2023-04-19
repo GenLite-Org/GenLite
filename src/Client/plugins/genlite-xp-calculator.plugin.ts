@@ -216,7 +216,7 @@ export class GenLiteXpCalculator extends GenLitePlugin {
         skillInfoGroup.id = "skillInfoGroup";
         skillInfoGroup.style.flexDirection = "row";
         skillInfoGroup.style.flexWrap = "nowrap";
-        skillInfoGroup.style.justifyContent = "space-between";
+        skillInfoGroup.style.justifyContent = "space-evenly";
         skillInfoGroup.style.alignItems = "center";
         skillInfoGroup.style.fontSize = "0.845em";
         skillInfoContainer.appendChild(skillInfoGroup);
