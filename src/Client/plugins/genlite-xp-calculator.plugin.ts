@@ -228,14 +228,25 @@ export class GenLiteXpCalculator extends GenLitePlugin {
         skillImage.id = "skillImage"
         skillInfoGroup.appendChild(skillImage);
 
+        // Create a Grouping Div for the Skill Calculations
+        let skillCalculations = document.createElement("div");
+        skillCalculations.style.display = "flex";
+        skillCalculations.id = "skillCalculations";
+        skillCalculations.style.flexDirection = "row";
+        skillCalculations.style.flexWrap = "nowrap";
+        skillCalculations.style.justifyContent = "space-between";
+        skillCalculations.style.width = "100%";
+        skillCalculations.style.padding = "5px";
+        skillCalculations.style.paddingLeft = "0px";
+        skillInfoGroup.appendChild(skillCalculations);
 
-        // Group the rest of the info together
+        // Skill Calc Set 1
         let skillCalculations1 = document.createElement("div");
         skillCalculations1.style.display = "flex";
         skillCalculations1.id = "skillCalculations1";
         skillCalculations1.style.flexDirection = "column";
         skillCalculations1.style.alignItems = "self-start";
-        skillInfoGroup.appendChild(skillCalculations1);
+        skillCalculations.appendChild(skillCalculations1);
         
 
         // XP Gained
@@ -257,13 +268,14 @@ export class GenLiteXpCalculator extends GenLitePlugin {
         xpHour.innerText = `XP/Hour: ${this.prettyPrintNumber(xpRate)}`;
         skillCalculations1.appendChild(xpHour);
 
+
         // The remaining information is shown on a new line
         let skillCalculations2 = document.createElement("div");
         skillCalculations2.id = "skillCalculations2";
         skillCalculations2.style.display = "flex";
         skillCalculations2.style.flexDirection = "column";
         skillCalculations2.style.alignItems = "self-end";
-        skillInfoGroup.appendChild(skillCalculations2);
+        skillCalculations.appendChild(skillCalculations2);
 
         // XP Left
         let xpLeft = document.createElement("span");
