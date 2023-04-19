@@ -236,8 +236,6 @@ export class GenLiteXpCalculator extends GenLitePlugin {
         skillCalculations.style.flexWrap = "nowrap";
         skillCalculations.style.justifyContent = "space-between";
         skillCalculations.style.width = "100%";
-        skillCalculations.style.padding = "5px";
-        skillCalculations.style.paddingLeft = "0px";
         skillInfoGroup.appendChild(skillCalculations);
 
         // Skill Calc Set 1
@@ -473,7 +471,7 @@ export class GenLiteXpCalculator extends GenLitePlugin {
 
     createSkillInfoCanvas(skillName, skillUI, trackerReference) {
         let skillInfoCopy = skillUI.cloneNode(true) as HTMLDivElement;
-        skillInfoCopy.style.width = "235px";
+        skillInfoCopy.style.width = "250px";
         skillInfoCopy.style.height = "150px";
         
         let firstChild = skillInfoCopy.children[0] as HTMLElement;
