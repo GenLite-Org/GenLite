@@ -218,7 +218,7 @@ export class GenLiteXpCalculator extends GenLitePlugin {
         skillInfoGroup.style.flexWrap = "nowrap";
         skillInfoGroup.style.justifyContent = "space-between";
         skillInfoGroup.style.alignItems = "center";
-        skillInfoGroup.style.fontSize = "0.8em";
+        skillInfoGroup.style.fontSize = "0.845em";
         skillInfoContainer.appendChild(skillInfoGroup);
 
         // Skill Image
