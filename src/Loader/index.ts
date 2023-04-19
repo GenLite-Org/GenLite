@@ -16,7 +16,7 @@ let githubConfig = require('./githubConfig');
 
 let targetFork = localStorage.getItem('GenLite.Fork');
 let targetForkDownload = `https://raw.githubusercontent.com/${targetFork}/GenLite/release/dist/genliteClient.user.js`;
-if (targetFork == null) {
+if (targetFork == null || githubConfig.type == "release") {
     targetFork = 'https://api.github.com/repos/GenLite-Org/GenLite/releases/latest';
     targetForkDownload = `https://raw.githubusercontent.com/GenLite-Org/GenLite/release/dist/genliteClient.user.js`;
     localStorage.setItem('GenLite.Fork', 'GenLite-Org');
@@ -392,8 +392,12 @@ if (needsUpdate) {
     xhrForks.onload = function () {
         const availableForks = JSON.parse(xhrForks.responseText);
         for (let i = 0; i < availableForks.length; i++) {
+            if (availableForks[i].owner.login == genliteFork) {
+                continue; // Skip the current fork
+            }
+
             // Verify that the fork has a genliteClient.js file in https://raw.githubusercontent.com/dpeGit/GenLite/release/dist/genliteClient.user.js
-            let forkURL = `https://raw.githubusercontent.com/${availableForks[i].owner.login}/GenLite/beta/dist/genliteClient.user.js`;
+            let forkURL = `https://raw.githubusercontent.com/${availableForks[i].owner.login}/GenLite/release/dist/genliteClient.user.js`;
             let xhrFork = new XMLHttpRequest();
             xhrFork.open("GET", forkURL);
             xhrFork.onload = function () {
