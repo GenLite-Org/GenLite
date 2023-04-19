@@ -73,9 +73,6 @@ export class GenLiteXpCalculator extends GenLitePlugin {
         this.createUITab();
         this.resetCalculatorAll();
 
-        // Create a Timer that will update the Skill Info every 5 seconds
-        this.updateTimer = setInterval(this.updateUITrackingInformation.bind(this), 5000);
-
         // Create a div element that should be used to display skill canvases, it will hold three skill canvases max, there should always be a canvas in the horizontal center of the screen
         // It will always be displaying but should be transparent and act purely as a container for the skill canvases, it will be allowed to take up 50% of the screen width and 150px of the screen height
         // The div element should be 25% from the left of the screen and 25% from the right of the screen
@@ -100,7 +97,43 @@ export class GenLiteXpCalculator extends GenLitePlugin {
         this.canvasHolder.style.right = "25%";
 
         document.body.appendChild(this.canvasHolder);
+
+        // Check if user is holding down the ALT key
+        document.addEventListener("keydown", (e) => {
+            if (e.altKey) {
+                this.canvasHolder.style.pointerEvents = "auto";
+            }
+        }
+        );
+
+        // Check if user is no longer holding down the ALT key
+        document.addEventListener("keyup", (e) => {
+            if (!e.altKey) {
+                this.canvasHolder.style.pointerEvents = "none";
+            }
+        }
+        );
     }
+
+    async loginOK(): Promise<void> {
+        if (!this.updateTimer) {
+            // Start the timer
+            this.updateTimer = setInterval(this.updateUITrackingInformation.bind(this), 5000);
+        }
+        if (this.canvasHolder) {
+            this.canvasHolder.style.display = "flex";
+        }
+
+    }
+
+    async Network_logoutOK(): Promise<void> {
+        if (this.updateTimer) {
+            // Destroy the timer
+            clearInterval(this.updateTimer);
+            this.updateTimer = null;
+        }
+    }
+
 
     updateUITrackingInformation() {
         // Call the update function for every skill
@@ -178,51 +211,39 @@ export class GenLiteXpCalculator extends GenLitePlugin {
         skillInfoContainer.style.backgroundColor = "rgba(30, 30, 30, 1)";
         skillInfo.appendChild(skillInfoContainer);
 
-        // The Skill Image should be in a group with the rest of the info
-        // The Skill Image should be on the left side of the group and the rest of the info should be on the right side of the group
-        // The progress bar should be on the bottom of the group and be the full width of the group
-
-        let skillImageGroup = document.createElement("div");
-        skillImageGroup.style.display = "flex";
-        skillImageGroup.style.flexDirection = "column-reverse";
-        skillImageGroup.style.alignContent = "center";
-        skillImageGroup.style.flexWrap = "wrap";
-        skillImageGroup.style.marginBottom = "10px";
-        skillInfoContainer.appendChild(skillImageGroup);
+        let skillInfoGroup = document.createElement("div");
+        skillInfoGroup.style.display = "flex";
+        skillInfoGroup.id = "skillInfoGroup";
+        skillInfoGroup.style.flexDirection = "row";
+        skillInfoGroup.style.flexWrap = "nowrap";
+        skillInfoGroup.style.justifyContent = "space-between";
+        skillInfoGroup.style.alignItems = "center";
+        skillInfoGroup.style.fontSize = "0.9em";
+        skillInfoContainer.appendChild(skillInfoGroup);
 
         // Skill Image
         let skillImage = document.createElement("img");
         skillImage.src = skillImageURL;
         skillImage.style.width = "65px";
-        skillImage.style.marginRight = "10px";
-        skillImage.style.float = "left";
         skillImage.id = "skillImage"
-        skillImageGroup.appendChild(skillImage);
-
-        // Skill Name
-        let skillNameElement = document.createElement("span");
-        skillNameElement.innerText = skillName.charAt(0).toUpperCase() + skillName.slice(1);
-        skillNameElement.style.fontSize = "1.5em";
-        skillNameElement.style.fontWeight = "bold";
-        skillNameElement.style.marginBottom = "5px";
-        skillImageGroup.appendChild(skillNameElement);
+        skillInfoGroup.appendChild(skillImage);
 
 
         // Group the rest of the info together
-        let skillInfoGroup = document.createElement("div");
-        skillInfoGroup.style.display = "flex";
-        skillInfoGroup.style.flexDirection = "row";
-        skillInfoGroup.style.alignItems = "center";
-        skillInfoGroup.style.justifyContent = "space-evenly";
-        skillInfoGroup.style.marginBottom = "5px";
-        skillInfoContainer.appendChild(skillInfoGroup);
+        let skillCalculations1 = document.createElement("div");
+        skillCalculations1.style.display = "flex";
+        skillCalculations1.id = "skillCalculations1";
+        skillCalculations1.style.flexDirection = "column";
+        skillCalculations1.style.alignItems = "self-start";
+        skillCalculations1.style.marginLeft = "-20px";
+        skillInfoGroup.appendChild(skillCalculations1);
         
 
         // XP Gained
         let xpGained = document.createElement("span");
         xpGained.id = "xpGained";
         xpGained.innerText = `XP Tracked: ${skill.startXP == 0 ? 0 : this.prettyPrintNumber(((piSkill.xp - skill.startXP) / 10))}`;
-        skillInfoGroup.appendChild(xpGained);
+        skillCalculations1.appendChild(xpGained);
 
         // XP/Hour
         let xpRate = 0;
@@ -233,29 +254,31 @@ export class GenLiteXpCalculator extends GenLitePlugin {
 
         let xpHour = document.createElement("span");
         xpHour.id = "xpHour";
+        xpHour.style.marginTop = "5px";
         xpHour.innerText = `XP/Hour: ${this.prettyPrintNumber(xpRate)}`;
-        skillInfoGroup.appendChild(xpHour);
+        skillCalculations1.appendChild(xpHour);
 
         // The remaining information is shown on a new line
-        let skillInfoNewLine = document.createElement("div");
-        skillInfoNewLine.style.display = "flex";
-        skillInfoNewLine.style.flexDirection = "row";
-        skillInfoNewLine.style.alignItems = "center";
-        skillInfoNewLine.style.justifyContent = "space-evenly";
-        skillInfoContainer.appendChild(skillInfoNewLine);
+        let skillCalculations2 = document.createElement("div");
+        skillCalculations2.id = "skillCalculations2";
+        skillCalculations2.style.display = "flex";
+        skillCalculations2.style.flexDirection = "column";
+        skillCalculations2.style.alignItems = "self-end";
+        skillCalculations2.style.marginRight = "10px";
+        skillInfoGroup.appendChild(skillCalculations2);
 
         // XP Left
         let xpLeft = document.createElement("span");
         xpLeft.id = "xpLeft";
         xpLeft.innerText = `XP Left: ${this.prettyPrintNumber(piSkill.tnl / 10)}`;
-        skillInfoNewLine.appendChild(xpLeft);
+        skillCalculations2.appendChild(xpLeft);
 
         // Actions
         let actions = document.createElement("span");
         actions.innerText = `Actions: ${this.prettyPrintNumber(skill.actionsToNext)}`;
         actions.id = "actions";
-        actions.style.marginLeft = "10px";
-        skillInfoNewLine.appendChild(actions);
+        actions.style.marginTop = "5px";
+        skillCalculations2.appendChild(actions);
 
         // Progress Bar
         let progressBar = document.createElement("div");
@@ -430,7 +453,7 @@ export class GenLiteXpCalculator extends GenLitePlugin {
         }
 
         document.addEventListener("click", (e) => {
-            if (e.target !== this.skillContext) {
+            if (this.skillContext && e.target !== this.skillContext) {
                 this.skillContext.remove();
             }
         });
@@ -442,22 +465,24 @@ export class GenLiteXpCalculator extends GenLitePlugin {
         let skillInfoCopy = skillUI.cloneNode(true) as HTMLDivElement;
         skillInfoCopy.style.width = "225px";
         skillInfoCopy.style.height = "150px";
-
-        // Enable cursor events on the copy
-        skillInfoCopy.style.pointerEvents = "auto";
         
         let firstChild = skillInfoCopy.children[0] as HTMLElement;
         firstChild.style.backgroundColor = "#1e1e1ebf";
-
-        // Remove the image from the copy
-        let skillImage = skillInfoCopy.querySelector("img");
-        skillImage.remove();
 
         // Remove all of the buttons from the copy
         let buttons = skillInfoCopy.querySelectorAll("button");
         buttons.forEach((button) => {
             button.remove();
         });
+
+        // Set the image width to be 45px
+        let image = skillInfoCopy.querySelector("img");
+        image.style.width = "45px";
+
+        // Set the skill info group to have a height of 45px
+        let skillInfoGroup = skillInfoCopy.querySelector("#skillInfoGroup") as HTMLDivElement;
+        skillInfoGroup.style.height = "45px";
+
 
         // Rereference the skill info elements to the copy
         trackerReference.container = skillInfoCopy;
@@ -522,6 +547,7 @@ export class GenLiteXpCalculator extends GenLitePlugin {
         trackerReference.progressBarFill.style.position = "relative";
         
         this.canvasHolder.appendChild(skillInfoCopy);
+
 
 
         // Add a check to see if the user right clicks on the skill info
@@ -831,9 +857,5 @@ export class GenLiteXpCalculator extends GenLitePlugin {
         let exp = Math.floor(Math.log(num) / Math.log(1000));
         let suffix = "kmb"[exp - 1];
         return (num / Math.pow(1000, exp)).toFixed(1) + suffix;
-    }
-
-    prettyPrintTime(time) {
-        // TODO: implement
     }
 }

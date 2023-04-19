@@ -380,7 +380,7 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
                     let playerLevel = document.game.PLAYER.character.combatLevel;
 
                     let levelDiff = npc.info.level - playerLevel
-                    let color = "#4C4E52";
+                    let color = "#ffff00";
 
                     if (levelDiff > 3 && levelDiff < 6) {
                         color = "#f80"
