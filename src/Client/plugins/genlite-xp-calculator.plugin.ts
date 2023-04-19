@@ -505,6 +505,8 @@ export class GenLiteXpCalculator extends GenLitePlugin {
         trackerReference.progressBarNextLevel = skillInfoCopy.querySelector("#progressBarNextLevel");
 
 
+        // Add just trackerReference.progressBar to have margin-bottom of 5px
+        trackerReference.progressBar.style.marginBottom = "5px";
 
         // Create a div to hold progressBarFill elements
         let progressBarFillContainer = document.createElement("div");
