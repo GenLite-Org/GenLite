@@ -352,67 +352,71 @@ if (needsUpdate) {
     let genliteVersion = localStorage.getItem('GenLite.Version');
     let genliteFork = localStorage.getItem('GenLite.Fork');
 
-    // Create a Select element (simple dropdown menu) with the label "GenLite Fork:" it will be appened to the #loginversion element
-    let select = document.createElement('select');
-    select.style.border = '1px solid #000';
-    select.style.borderRadius = '0.25em';
-    select.style.background = '#fff';
-    select.style.color = '#000';
-    select.style.cursor = 'pointer';
-    select.style.outline = 'none';
+    let label : HTMLLabelElement | null;
+    let select : HTMLSelectElement | null;
+    if (githubConfig.type != "release") {
+        // Create a Select element (simple dropdown menu) with the label "GenLite Fork:" it will be appened to the #loginversion element
+        select = document.createElement('select');
+        select.style.border = '1px solid #000';
+        select.style.borderRadius = '0.25em';
+        select.style.background = '#fff';
+        select.style.color = '#000';
+        select.style.cursor = 'pointer';
+        select.style.outline = 'none';
 
-    // Create a label for the select element
-    let label = document.createElement('label');
-    label.innerText = 'GenLite Fork: ';
+        // Create a label for the select element
+        label = document.createElement('label');
+        label.innerText = 'GenLite Fork: ';
 
-    // Create a default option
-    let defaultOption = document.createElement('option');
-    // Set the default option to the current fork
-    defaultOption.innerText = genliteFork;
-    defaultOption.value = genliteFork;
-    defaultOption.selected = true;
-    select.appendChild(defaultOption);
+        // Create a default option
+        let defaultOption = document.createElement('option');
+        // Set the default option to the current fork
+        defaultOption.innerText = genliteFork;
+        defaultOption.value = genliteFork;
+        defaultOption.selected = true;
+        select.appendChild(defaultOption);
 
-    // Add an event listener to the select element
-    select.addEventListener('change', (e: Event) => {
-        let target  = e.target as HTMLSelectElement;
-        genliteFork = target.value;
-        localStorage.setItem('GenLite.Fork', genliteFork);
+        // Add an event listener to the select element
+        select.addEventListener('change', (e: Event) => {
+            let target  = e.target as HTMLSelectElement;
+            genliteFork = target.value;
+            localStorage.setItem('GenLite.Fork', genliteFork);
+            
+            // Delete all other created localStorages
+            localStorage.removeItem('GenLite.Client');
+            localStorage.removeItem('GenLite.Version');
+            localStorage.removeItem('GenLite.UpdateTimestamp');
+
+            window.location.reload();
+        });
         
-        // Delete all other created localStorages
-        localStorage.removeItem('GenLite.Client');
-        localStorage.removeItem('GenLite.Version');
-        localStorage.removeItem('GenLite.UpdateTimestamp');
-
-        window.location.reload();
-    });
-    
-    let xhrForks = new XMLHttpRequest();
-    xhrForks.open("GET", "https://api.github.com/repos/GenLite-Org/GenLite/forks");
-    xhrForks.onload = function () {
-        const availableForks = JSON.parse(xhrForks.responseText);
-        for (let i = 0; i < availableForks.length; i++) {
-            if (availableForks[i].owner.login == genliteFork) {
-                continue; // Skip the current fork
-            }
-
-            // Verify that the fork has a genliteClient.js file in https://raw.githubusercontent.com/dpeGit/GenLite/release/dist/genliteClient.user.js
-            let forkURL = `https://raw.githubusercontent.com/${availableForks[i].owner.login}/GenLite/release/dist/genliteClient.user.js`;
-            let xhrFork = new XMLHttpRequest();
-            xhrFork.open("GET", forkURL);
-            xhrFork.onload = function () {
-                let fork = availableForks[i];
-                if (xhrFork.status == 200) {
-                    let option = document.createElement('option');
-                    option.value = fork.owner.login;
-                    option.innerText =  fork.owner.login;
-                    select.appendChild(option);
+        let xhrForks = new XMLHttpRequest();
+        xhrForks.open("GET", "https://api.github.com/repos/GenLite-Org/GenLite/forks");
+        xhrForks.onload = function () {
+            const availableForks = JSON.parse(xhrForks.responseText);
+            for (let i = 0; i < availableForks.length; i++) {
+                if (availableForks[i].owner.login == genliteFork) {
+                    continue; // Skip the current fork
                 }
+
+                // Verify that the fork has a genliteClient.js file in https://raw.githubusercontent.com/dpeGit/GenLite/release/dist/genliteClient.user.js
+                let forkURL = `https://raw.githubusercontent.com/${availableForks[i].owner.login}/GenLite/release/dist/genliteClient.user.js`;
+                let xhrFork = new XMLHttpRequest();
+                xhrFork.open("GET", forkURL);
+                xhrFork.onload = function () {
+                    let fork = availableForks[i];
+                    if (xhrFork.status == 200) {
+                        let option = document.createElement('option');
+                        option.value = fork.owner.login;
+                        option.innerText =  fork.owner.login;
+                        select.appendChild(option);
+                    }
+                }
+                xhrFork.send();
             }
-            xhrFork.send();
         }
+        xhrForks.send();
     }
-    xhrForks.send();
 
     
     // Wait for the page to load and be ready
@@ -432,8 +436,10 @@ if (needsUpdate) {
 
 
         // The select element is created and appended to the loginversion span semi-asynchronously
-        loginVersion.appendChild(label);
-        loginVersion.appendChild(select);
+        if (githubConfig.type != "release") {
+            loginVersion.appendChild(label);
+            loginVersion.appendChild(select);
+        }
 
         // Update #login__client-info margin-top to 4em to account for the new elements
         let loginClientInfo = document.getElementById('login__client-info');
