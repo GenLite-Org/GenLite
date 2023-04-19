@@ -13,6 +13,18 @@
 
 let githubConfig = require('./githubConfig');
 
+
+let targetFork = localStorage.getItem('GenLite.Fork');
+let targetForkDownload = `https://raw.githubusercontent.com/${targetFork}/GenLite/release/dist/genliteClient.user.js`;
+if (targetFork == null) {
+    targetFork = 'https://api.github.com/repos/GenLite-Org/GenLite/releases/latest';
+    targetForkDownload = `https://raw.githubusercontent.com/GenLite-Org/GenLite/release/dist/genliteClient.user.js`;
+    localStorage.setItem('GenLite.Fork', 'GenLite-Org');
+} else {
+    githubConfig.repoOwner = targetFork;
+}
+
+
 // Check the Local Storage for GenLite.UpdateTimestamp
 let genliteUpdateTimestamp = localStorage.getItem('GenLite.UpdateTimestamp');
 if (genliteUpdateTimestamp == null) {
@@ -375,32 +387,32 @@ if (needsUpdate) {
         window.location.reload();
     });
     
-    // let xhrForks = new XMLHttpRequest();
-    // xhrForks.open("GET", "https://api.github.com/repos/Retoxified/GenLite/forks"); // Note: This is synchronous
-    // xhrForks.onload = function () {
-    //     const availableForks = JSON.parse(xhrForks.responseText);
-    //     for (let i = 0; i < availableForks.length; i++) {
-    //         if (availableForks[i].owner.login == genliteFork) {
-    //             continue; // Skip the current fork
-    //         }
+    let xhrForks = new XMLHttpRequest();
+    xhrForks.open("GET", "https://api.github.com/repos/GenLite-Org/GenLite/forks");
+    xhrForks.onload = function () {
+        const availableForks = JSON.parse(xhrForks.responseText);
+        for (let i = 0; i < availableForks.length; i++) {
+            if (availableForks[i].owner.login == genliteFork) {
+                continue; // Skip the current fork
+            }
 
-    //         // Verify that the fork has a genliteClient.js file in https://raw.githubusercontent.com/dpeGit/GenLite/release/dist/genliteClient.user.js
-    //         let forkURL = `https://raw.githubusercontent.com/${availableForks[i].owner.login}/GenLite/release/dist/genliteClient.user.js`;
-    //         let xhrFork = new XMLHttpRequest();
-    //         xhrFork.open("GET", forkURL);
-    //         xhrFork.onload = function () {
-    //             let fork = availableForks[i];
-    //             if (xhrFork.status == 200) {
-    //                 let option = document.createElement('option');
-    //                 option.value = fork.owner.login;
-    //                 option.innerText =  fork.owner.login;
-    //                 select.appendChild(option);
-    //             }
-    //         }
-    //         xhrFork.send();
-    //     }
-    // }
-    // xhrForks.send();
+            // Verify that the fork has a genliteClient.js file in https://raw.githubusercontent.com/dpeGit/GenLite/release/dist/genliteClient.user.js
+            let forkURL = `https://raw.githubusercontent.com/${availableForks[i].owner.login}/GenLite/beta/dist/genliteClient.user.js`;
+            let xhrFork = new XMLHttpRequest();
+            xhrFork.open("GET", forkURL);
+            xhrFork.onload = function () {
+                let fork = availableForks[i];
+                if (xhrFork.status == 200) {
+                    let option = document.createElement('option');
+                    option.value = fork.owner.login;
+                    option.innerText =  fork.owner.login;
+                    select.appendChild(option);
+                }
+            }
+            xhrFork.send();
+        }
+    }
+    xhrForks.send();
 
     
     // Wait for the page to load and be ready
