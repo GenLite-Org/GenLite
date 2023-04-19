@@ -70,7 +70,7 @@ export class GenLiteDatabasePlugin extends GenLitePlugin {
 
     request(ignoreInit=false) {
         if (!ignoreInit && !this.initialized) {
-            console.log("IDB is not yet initialized");
+            this.warn("IDB is not yet initialized");
             return null;
         }
         if (!this.supported) {

@@ -307,7 +307,7 @@ export class GenLiteChatPlugin extends GenLitePlugin {
             };
         } else {
             this.preserveMessages = false;
-            console.log(
+            this.warn(
                 '%c IndexedDB is not supported, cannot save chat logs',
                 'color:red'
             );
@@ -650,7 +650,7 @@ export class GenLiteChatPlugin extends GenLitePlugin {
         //       - send message w/o network.action
         input.onkeyup = (e) => {
             if (e.key === "Enter") {
-                console.log("Sending to " + name, input.value);
+                this.info("Sending to " + name, input.value);
                 input.value = '';
             }
         }

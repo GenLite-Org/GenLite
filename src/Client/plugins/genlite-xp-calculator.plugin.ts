@@ -463,7 +463,7 @@ export class GenLiteXpCalculator extends GenLitePlugin {
 
     createSkillInfoCanvas(skillName, skillUI, trackerReference) {
         let skillInfoCopy = skillUI.cloneNode(true) as HTMLDivElement;
-        skillInfoCopy.style.width = "225px";
+        skillInfoCopy.style.width = "235px";
         skillInfoCopy.style.height = "150px";
         
         let firstChild = skillInfoCopy.children[0] as HTMLElement;

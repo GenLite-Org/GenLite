@@ -832,7 +832,7 @@ export class GenLiteUIPlugin extends GenLitePlugin {
                     settings[setting].value = parseFloat(settings[setting].value);
                     break;
                 default:
-                    console.error(`Invalid setting type for ${setting} in ${plugin}`);
+                    this.error(`Invalid setting type for ${setting} in ${plugin}`);
                     break;
             }
 
