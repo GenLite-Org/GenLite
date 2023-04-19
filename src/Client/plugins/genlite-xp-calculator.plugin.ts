@@ -235,7 +235,6 @@ export class GenLiteXpCalculator extends GenLitePlugin {
         skillCalculations1.id = "skillCalculations1";
         skillCalculations1.style.flexDirection = "column";
         skillCalculations1.style.alignItems = "self-start";
-        skillCalculations1.style.marginLeft = "-20px";
         skillInfoGroup.appendChild(skillCalculations1);
         
 
@@ -264,7 +263,6 @@ export class GenLiteXpCalculator extends GenLitePlugin {
         skillCalculations2.style.display = "flex";
         skillCalculations2.style.flexDirection = "column";
         skillCalculations2.style.alignItems = "self-end";
-        skillCalculations2.style.marginRight = "10px";
         skillInfoGroup.appendChild(skillCalculations2);
 
         // XP Left
