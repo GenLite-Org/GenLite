@@ -392,10 +392,6 @@ if (needsUpdate) {
     xhrForks.onload = function () {
         const availableForks = JSON.parse(xhrForks.responseText);
         for (let i = 0; i < availableForks.length; i++) {
-            if (availableForks[i].owner.login == genliteFork) {
-                continue; // Skip the current fork
-            }
-
             // Verify that the fork has a genliteClient.js file in https://raw.githubusercontent.com/dpeGit/GenLite/release/dist/genliteClient.user.js
             let forkURL = `https://raw.githubusercontent.com/${availableForks[i].owner.login}/GenLite/beta/dist/genliteClient.user.js`;
             let xhrFork = new XMLHttpRequest();
