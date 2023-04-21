@@ -253,7 +253,7 @@ export class GenLiteWikiDataCollectionPlugin extends GenLitePlugin {
         document.genlite.sendDataToServer("monsterdata", monsterdata);
     }
 
-    handleCopyShopData(state: boolean): void {
+    handleCopyShopData(state: string): void {
         if(document.game.SHOP?.data?.slots === undefined)
             return; 
 
