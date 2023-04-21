@@ -1058,6 +1058,13 @@ export class GenLiteUIPlugin extends GenLitePlugin {
                     settingInput = document.createElement('input');
                     settingInput.type = 'button';
                     settingInput.value = settings[setting].value;
+                    // Styling
+                    settingInput.style.backgroundColor = 'rgba(92, 92, 92, 0.75)';
+                    settingInput.style.border = '1px solid rgba(0, 0, 0, 1)';
+                    settingInput.style.borderRadius = '0px 0px 0px 0px';
+                    settingInput.style.color = 'white';
+                    settingInput.style.marginRight = '10px';
+
                     // Add the event listener to the input
                     settingInput.addEventListener('click', () => {
                         // Call the plugin state handler
