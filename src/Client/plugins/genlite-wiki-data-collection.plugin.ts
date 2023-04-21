@@ -31,12 +31,20 @@ export class GenLiteWikiDataCollectionPlugin extends GenLitePlugin {
     scanInterval: NodeJS.Timer = null;
     sendInterval: NodeJS.Timer = null;
 
+    pluginSettings: Settings = {
+        "Copy Shop Data": {
+            type: 'button',
+            value: "Copy",
+            stateHandler: this.handleCopyShopData.bind(this)
+        }
+    }
+
     async init() {
         document.genlite.registerPlugin(this);
     }
 
     async postInit() {
-        document.genlite.ui.registerPlugin("Wiki Data Collection", null, this.handlePluginState.bind(this), {}, true, "Warning: This plugin will send data to the wiki (a third party). Only enable this plugin if you trust the wiki.");
+        document.genlite.ui.registerPlugin("Wiki Data Collection", null, this.handlePluginState.bind(this), this.pluginSettings, true, "Warning: This plugin will send data to the wiki (a third party). Only enable this plugin if you trust the wiki.");
     }
 
     handlePluginState(state: boolean): void {
@@ -243,5 +251,30 @@ export class GenLiteWikiDataCollectionPlugin extends GenLitePlugin {
             return;
         let monsterdata = callback_this.toSend.pop();
         document.genlite.sendDataToServer("monsterdata", monsterdata);
+    }
+
+    handleCopyShopData(state: boolean): void {
+        if(document.game.SHOP?.data?.slots === undefined)
+            return; 
+
+        const wikiDataLines = [];
+        wikiDataLines.push("==Stock==");
+        wikiDataLines.push("{{ShopStockTableHead}}");
+
+        for(let slot in document.game.SHOP.data.slots) { 
+            let item_id = document.game.SHOP.data.slots[slot];
+            let shop_item_data = document.game.SHOP.data.items[item_id];
+            let game_item_data = document.game.DATA.items[item_id];
+
+            wikiDataLines.push(`{{ShopStockTableLine|Image=${game_item_data.name}|Quality=${game_item_data.border?.toUpperCase() ?? "RQ"}|Item=${game_item_data.name}|Stock=${shop_item_data.shop_quantity ?? 0}|Buy=${shop_item_data.buy_price ?? "N/A"}|Sell=${shop_item_data.sell_price ?? "N/A"}}}`);
+        }
+
+        wikiDataLines.push("|}");
+
+        const wikiData = wikiDataLines.join("\n");
+        navigator.clipboard.writeText(wikiData);
+
+        console.log(wikiData);
+        alert('Clipboard set!');
     }
 }
