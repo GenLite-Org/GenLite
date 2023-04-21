@@ -1063,6 +1063,7 @@ export class GenLiteUIPlugin extends GenLitePlugin {
                         // Call the plugin state handler
                         settings[setting].stateHandler(settingInput.value);
                     });
+                    break;
                 default:
                     // Create the input
                     settingInput = document.createElement('input');
