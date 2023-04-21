@@ -274,7 +274,6 @@ export class GenLiteWikiDataCollectionPlugin extends GenLitePlugin {
         const wikiData = wikiDataLines.join("\n");
         navigator.clipboard.writeText(wikiData);
 
-        console.log(wikiData);
-        alert('Clipboard set!');
+        console.log("Copied to clipboard!\n" + wikiData);
     }
 }
