@@ -134,6 +134,7 @@ let isInitialized = false;
         gameObject('Trade', 'Hv');
         gameObject('Friends', 'G_');
         gameObject('PlayerHUD', 'zv');
+        gameObject('Shop', 'jv');
 
 
         // Objects
