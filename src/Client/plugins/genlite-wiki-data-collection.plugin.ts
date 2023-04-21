@@ -265,7 +265,7 @@ export class GenLiteWikiDataCollectionPlugin extends GenLitePlugin {
             let item_id = document.game.SHOP.data.slots[slot];
             let shop_item_data = document.game.SHOP.data.items[item_id];
             let game_item_data_nq = document.game.DATA.items[item_id.replace(/_lq$|_hq$/gi, "")];
-            let game_item_data = document.game.DATA.items[item_id.replace(/_lq$|_hq$/gi, "")];
+            let game_item_data = document.game.DATA.items[item_id];
 
             wikiDataLines.push(`{{ShopStockTableLine|Image=${game_item_data_nq.name}|Quality=${game_item_data.border?.toUpperCase() ?? "RQ"}|Item=${game_item_data_nq.name}|Stock=${shop_item_data.shop_quantity ?? 0}|Buy=${shop_item_data.buy_price ?? ""}|Sell=${shop_item_data.sell_price ?? ""}}}`);
         }
