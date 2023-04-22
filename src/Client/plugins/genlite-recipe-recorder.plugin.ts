@@ -33,14 +33,24 @@ export class GenLiteRecipeRecorderPlugin extends GenLitePlugin {
     isPluginEnabled: boolean = false;
 
     uiTab: HTMLElement = null;
+    settingsMenu: HTMLElement = null;
     listContainer: HTMLElement = null;
     recipeElements: Record<string, HTMLElement> = {};
+
+    session = null;
+    sessionButton: HTMLElement = null;
 
     async init() {
         document.genlite.registerPlugin(this);
         window.addEventListener('keydown', this.keyDownHandler.bind(this));
         window.addEventListener('keyup', this.keyUpHandler.bind(this));
 
+        document.genlite.database.add((db) => {
+            if (db.objectStoreNames.contains('recipesessions')) return;
+            let store = db.createObjectStore('recipesessions', {
+                keyPath: 'start',
+            });
+        });
 
         let dropTableString = localStorage.getItem("GenliteRecipeRecorder")
         if (dropTableString == null) {
@@ -76,6 +86,8 @@ export class GenLiteRecipeRecorderPlugin extends GenLitePlugin {
                 flex-direction: column;
                 overflow-y: scroll;
                 height: 100%;
+                flex-grow: 1;
+                border-bottom: 1px solid rgb(66, 66, 66);
             }
 
             .genlite-recipes-row {
@@ -165,22 +177,37 @@ export class GenLiteRecipeRecorderPlugin extends GenLitePlugin {
                 margin-left: auto;
                 margin-right: auto
             }
+
+            .genlite-recipes-session-row {
+                display: flex;
+                padding: 1em;
+                justify-content: center;
+            }
+
+            .genlite-recipes-session-button {
+                padding: 0.25em;
+                background-color: #4b4b4b;
+                border: 1px solid black;
+                cursor: pointer;
+            }
         `;
         document.head.appendChild(style);
     }
 
     createUITab() {
         if (this.uiTab) {
-            this.uiTab.remove();
+            // not creating, redrawing
+            this.settingsMenu.innerHTML = '';
+            this.recipeElements = {};
+        } else {
+            this.settingsMenu = <HTMLElement>document.createElement("div");
+            this.settingsMenu.classList.add("genlite-recipes-container");
         }
-
-        let settingsMenu = <HTMLElement>document.createElement("div");
-        settingsMenu.classList.add("genlite-recipes-container");
 
         // search bar
         let searchrow = <HTMLElement>document.createElement("div");
         searchrow.classList.add("genlite-recipes-search-row");
-        settingsMenu.appendChild(searchrow);
+        this.settingsMenu.appendChild(searchrow);
 
         let search = <HTMLInputElement>document.createElement("input");
         searchrow.appendChild(search);
@@ -239,17 +266,46 @@ export class GenLiteRecipeRecorderPlugin extends GenLitePlugin {
         // recipe list
         this.listContainer = <HTMLElement>document.createElement("div");
         this.listContainer.classList.add("genlite-recipes-list");
-        settingsMenu.appendChild(this.listContainer);
-        for (const recipeName in this.recipeResults) {
-            this.createRecipeRow(recipeName);
-        }
+        this.settingsMenu.appendChild(this.listContainer);
+        this.createRecipeList();
 
-        this.uiTab = document.genlite.ui.addTab("kitchen-set", "Recipe Recorder", settingsMenu, this.isPluginEnabled);
+        let sessionRow = <HTMLElement>document.createElement("div");
+        sessionRow.classList.add("genlite-recipes-session-row");
+        this.settingsMenu.appendChild(sessionRow);
+
+        this.sessionButton = <HTMLElement>document.createElement("div");
+        this.sessionButton.classList.add("genlite-recipes-session-button");
+        this.sessionButton.innerText = "Begin Session";
+        sessionRow.appendChild(this.sessionButton);
+
+        let plugin = this;
+        this.sessionButton.onclick = function (e) {
+            if (plugin.session === null) {
+                plugin.beginSession();
+                plugin.sessionButton.innerText = "End Session";
+            } else {
+                plugin.endSession();
+                plugin.sessionButton.innerText = "Begin Session";
+            }
+        };
+
+        if (!this.uiTab) {
+            this.uiTab = document.genlite.ui.addTab("kitchen-set", "Recipe Recorder", this.settingsMenu, this.isPluginEnabled);
+        }
     }
 
-    createRecipeRow(recipeName: string) {
-        const result = this.recipeResults[recipeName];
+    createRecipeList() {
+        let results = this.recipeResults;
+        if (this.session) {
+            results = this.session.results;
+        }
+        for (const recipeName in results) {
+            this.createRecipeRow(results, recipeName);
+        }
+    }
 
+    createRecipeRow(results, recipeName: string) {
+        const result = results[recipeName];
         let row = <HTMLElement>document.createElement("div");
         row.classList.add("genlite-recipes-row");
         this.listContainer.appendChild(row);
@@ -269,16 +325,19 @@ export class GenLiteRecipeRecorderPlugin extends GenLitePlugin {
         arrow.appendChild(i);
         icons.appendChild(arrow);
 
-        let trash = <HTMLElement>document.createElement("div");
-        trash.classList.add("genlite-recipes-trash");
-        trash.innerHTML = '<i class="fas fa-trash"></i>';
-        icons.appendChild(trash);
-        trash.onclick = (e) => {
-            let plugin = document['GenLiteRecipeRecorderPlugin'];
-            plugin.deleteRecipe(recipeName);
-            plugin.recipeElements[recipeName].remove();
-            delete plugin.recipeResults[recipeName];
-        };
+        if (this.session === null) {
+            // TODO: trash icon when tracking a session
+            let trash = <HTMLElement>document.createElement("div");
+            trash.classList.add("genlite-recipes-trash");
+            trash.innerHTML = '<i class="fas fa-trash"></i>';
+            icons.appendChild(trash);
+            trash.onclick = (e) => {
+                let plugin = document['GenLiteRecipeRecorderPlugin'];
+                plugin.deleteRecipe(recipeName);
+                plugin.recipeElements[recipeName].remove();
+                delete plugin.recipeResults[recipeName];
+            };
+        }
 
         for (const item in result.input) {
             let icon = this.createIconDiv(item);
@@ -448,14 +507,18 @@ export class GenLiteRecipeRecorderPlugin extends GenLitePlugin {
 
     updateRecipeRow(recipeName: string) {
         let row = this.recipeElements[recipeName];
+        let results = this.recipeResults;
+        if (this.session) {
+            results = this.session.results;
+        }
         if (!row) {
-            this.createRecipeRow(recipeName);
+            this.createRecipeRow(results, recipeName);
         } else {
-            let results = this.recipeResults[recipeName];
+            let recipe = results[recipeName];
             let es = row.getElementsByClassName('genlite-recipes-output');
             if (es) {
                 let outputBox = <HTMLElement>es[0];
-                this.updateOutputBox(outputBox, recipeName, results);
+                this.updateOutputBox(outputBox, recipeName, recipe);
             }
         }
     }
@@ -490,11 +553,18 @@ export class GenLiteRecipeRecorderPlugin extends GenLitePlugin {
                     for (let i of mats) // if params is set here then record a complex recipe name
                         this.recipeName = this.recipeName.concat("__", i, params.action.params[i]);
                 }
-                if (this.recipeResults[this.recipeName] === undefined)
+                if (this.recipeResults[this.recipeName] === undefined) {
                     this.recipeResults[this.recipeName] = {
                         input: {},
                         output: {}
                     };
+                }
+                if (this.session && this.session.results[this.recipeName] === undefined) {
+                    this.session.results[this.recipeName] = {
+                        input: {},
+                        output: {}
+                    };
+                }
                 return;
             }
 
@@ -614,23 +684,45 @@ export class GenLiteRecipeRecorderPlugin extends GenLitePlugin {
                 continue;
 
             if (itemList[i] < 0) {
-                if (this.recipeResults[this.recipeName].output[i] === undefined)
+                if (this.recipeResults[this.recipeName].output[i] === undefined) {
                     this.recipeResults[this.recipeName].output[i] = 0;
+                }
                 this.recipeResults[this.recipeName].output[i] -= itemList[i];
+                if (this.session) {
+                    if (this.session.results[this.recipeName].output[i] === undefined) {
+                        this.session.results[this.recipeName].output[i] = 0;
+                    }
+                    this.session.results[this.recipeName].output[i] -= itemList[i];
+                }
                 isNothing = false;
             } else if (itemList[i] > 0) {
-                if (this.recipeResults[this.recipeName].input[i] === undefined)
+                if (this.recipeResults[this.recipeName].input[i] === undefined) {
                     this.recipeResults[this.recipeName].input[i] = 0;
+                }
                 this.recipeResults[this.recipeName].input[i] += itemList[i];
+                if (this.session) {
+                    if (this.session.results[this.recipeName].input[i] === undefined) {
+                        this.session.results[this.recipeName].input[i] = 0;
+                    }
+                    this.session.results[this.recipeName].input[i] += itemList[i];
+                }
             }
         }
         if (isNothing) {
-            if (this.recipeResults[this.recipeName].output["nothing"] === undefined)
+            if (this.recipeResults[this.recipeName].output["nothing"] === undefined) {
                 this.recipeResults[this.recipeName].output["nothing"] = 0;
+            }
             this.recipeResults[this.recipeName].output["nothing"]++;
+            if (this.session) {
+                if (this.session.results[this.recipeName].output["nothing"] === undefined) {
+                    this.session.results[this.recipeName].output["nothing"] = 0;
+                }
+                this.session.results[this.recipeName].output["nothing"]++;
+            }
         }
 
         this.updateRecipeRow(this.recipeName);
+        if (this.session) this.saveSession(this.session);
     }
 
     storeGatherData(itemList) {
@@ -698,5 +790,34 @@ export class GenLiteRecipeRecorderPlugin extends GenLitePlugin {
             let el = eles[i] as HTMLElement;
             el.style.removeProperty('display');
         }
+    }
+
+    beginSession() {
+        if (this.session) return;
+        this.session = {
+            start: Date.now(),
+            results: {},
+            end: -1,
+        };
+        this.saveSession(this.session);
+        this.createUITab();
+    }
+
+    saveSession(session) {
+        document.genlite.database.storeTx(
+            'recipesessions',
+            'readwrite',
+            (store) => {
+                store.put(session);
+            }
+        );
+    }
+
+    endSession() {
+        if (this.session === null) return;
+        this.session.end = Date.now();
+        this.saveSession(this.session);
+        this.session = null
+        this.createUITab();
     }
 }

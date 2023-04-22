@@ -19,7 +19,7 @@ type StoreCallback = (db: IDBObjectStore) => void;
 export class GenLiteDatabasePlugin extends GenLitePlugin {
     public static pluginName = 'GenLiteDatabasePlugin';
     public static dbName = 'GenLiteDatabase';
-    public static version = 4;
+    public static version = 5;
 
     public supported = false;
     public initialized = false;
