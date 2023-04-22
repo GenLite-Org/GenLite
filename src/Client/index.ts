@@ -134,6 +134,7 @@ let isInitialized = false;
         gameObject('Trade', 'Hv');
         gameObject('Friends', 'G_');
         gameObject('PlayerHUD', 'zv');
+        gameObject('Shop', 'jv');
 
 
         // Objects
@@ -159,6 +160,7 @@ let isInitialized = false;
         gameObject('TRADE', 'Mw');
         gameObject('NETWORK_CONTAINER', 'mg');
         gameObject('FRIENDS', 'dw');
+        gameObject('SHOP', 'yw');
 
         /* Special Case Objects */
         /* have to do this here because keyboard is constantly redefined */
