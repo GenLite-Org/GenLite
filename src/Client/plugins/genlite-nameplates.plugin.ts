@@ -23,6 +23,12 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
     showNPCNames: boolean = false;
     showItemNames: boolean = false;
     invertTagging: boolean = false;
+    itemPrioritization: boolean = true;
+
+    uiTab: HTMLElement = null;
+    settingsMenu: HTMLElement = null;
+    listContainer: HTMLElement = null;
+    itemElements: Record<string, HTMLElement> = {};
 
     pluginSettings: Settings = {
         "Global Scaling": {
@@ -58,7 +64,12 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
             type: 'checkbox',
             value: this.showItemNames,
             stateHandler: this.handleShowItemNamesSettingChange.bind(this)
-        }
+        },
+        "Item Prioritization": {
+            type: 'checkbox',
+            value: this.itemPrioritization,
+            stateHandler: this.handleItemPrioritizationChange.bind(this)
+        },
     };
 
 
@@ -79,11 +90,300 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
     }
 
     async postInit() {
+        this.createCSS();
+        this.createUITab();
         this.pluginSettings = document.genlite.ui.registerPlugin("Name Plates", null, this.handlePluginState.bind(this), this.pluginSettings);
+    }
+
+    createCSS() {
+        const style = document.createElement('style');
+        style.innerHTML = `
+            .genlite-items-container {
+                display: flex;
+                flex-direction: column;
+                overflow-x: hidden;
+                color: #ffd593;
+                font-family: acme,times new roman,Times,serif;
+                height: 100%;
+            }
+
+            .genlite-items-list {
+                display: flex;
+                flex-direction: column;
+                overflow-y: scroll;
+                height: 100%;
+                flex-grow: 1;
+                border-bottom: 1px solid rgb(66, 66, 66);
+            }
+
+            .genlite-items-row {
+                display: flex;
+                flex-direction: column;
+                flex-shrink: 0;
+                border-bottom: 1px solid rgb(66, 66, 66);
+                border-top: 1px solid rgb(0, 0, 0);
+            }
+
+            .genlite-items-iconlist {
+                display: flex;
+                column-gap: 0.5em;
+                padding: 0.25em;
+                padding-left: 1em;
+                position: relative;
+                align-items: center;
+            }
+
+            .genlite-items-icon {
+                width: 28px;
+                height: 28px;
+                position: relative;
+                flex-shrink: 0;
+            }
+
+            .genlite-items-search-row {
+                width: 100%;
+                height: 25px;
+                border-bottom: 1px solid rgb(66, 66, 66);
+                display: flex;
+                align-items: center;
+            }
+
+            .genlite-items-search {
+                background-color: rgb(42, 40, 40);
+                color: rgb(255, 255, 255);
+                font-size: 16px;
+                border-radius: 0px;
+                padding-left: 10px;
+                padding-right: 10px;
+                box-sizing: border-box;
+                outline: none;
+                width: 100%;
+                border: medium none;
+                margin-left: auto;
+                margin-right: auto
+            }
+
+            .genlite-items-title {
+                flex-grow: 1;
+                display: flex;
+                align-items: center;
+                color: white;
+            }
+
+            .genlite-items-high-pri {
+                color: gold;
+                text-shadow: 0 0 2px goldenrod;
+            }
+
+            .genlite-items-low-pri {
+                color: gray;
+                text-decoration-line: line-through;
+            }
+
+            .genlite-arrow-holder {
+                flex-shrink: 0;
+                padding-right: 1em;
+                display: flex;
+                flex-direction: column;
+            }
+
+            .genlite-items-arrow-up {
+                color: gold;
+                cursor: pointer;
+            }
+
+            .genlite-items-arrow-down {
+                color: lightgray;
+                cursor: pointer;
+            }
+
+        `;
+        document.head.appendChild(style);
+    }
+
+    createUITab() {
+        if (this.uiTab) {
+            // not creating, redrawing
+            this.settingsMenu.innerHTML = '';
+            this.itemElements = {};
+        } else {
+            this.settingsMenu = <HTMLElement>document.createElement("div");
+            this.settingsMenu.classList.add("genlite-items-container");
+        }
+
+        // search bar
+        let searchrow = <HTMLElement>document.createElement("div");
+        searchrow.classList.add("genlite-items-search-row");
+        this.settingsMenu.appendChild(searchrow);
+
+        let search = <HTMLInputElement>document.createElement("input");
+        searchrow.appendChild(search);
+        search.classList.add("genlite-items-search");
+        search.placeholder = "Search Items...";
+        search.type = "text";
+
+        search.onfocus = () => {
+            document.game.CHAT.focus_locked = true;
+        }
+
+        search.onblur = () => {
+            document.game.CHAT.focus_locked = false;
+        }
+
+        search.oninput = function (e) {
+            let value = search.value.trim().toLowerCase();
+            let values = [];
+            for (const v of value.split(",")) {
+                values.push(v.trim());
+            }
+
+            let rows = document.getElementsByClassName("genlite-items-row");
+            for (let i = 0; i < rows.length; i++) {
+                let row = rows[i] as HTMLElement;
+                let content = row["seo"].toLowerCase();
+                if (value === "") {
+                    row.style.removeProperty("display");
+                    continue;
+                }
+
+                let match = true;
+                for (let v of values) {
+                    let invert = v[0] === "-";
+                    if (invert) {
+                        v = v.substr(1);
+                    }
+
+                    if (!invert && !content.includes(v)) {
+                        match = false;
+                        break;
+                    } else if (invert && content.includes(v)) {
+                        match = false;
+                        break;
+                    }
+                }
+                if (match) {
+                    row.style.removeProperty("display");
+                } else {
+                    row.style.display = "none";
+                }
+            }
+        };
+
+        // item list
+        this.listContainer = <HTMLElement>document.createElement("div");
+        this.listContainer.classList.add("genlite-items-list");
+        this.settingsMenu.appendChild(this.listContainer);
+        this.createItemsList();
+
+        if (!this.uiTab) {
+            this.uiTab = document.genlite.ui.addTab("sack-dollar", "Item Priority", this.settingsMenu, this.isPluginEnabled);
+        }
+    }
+
+    createItemsList() {
+        let droprecorder = document["GenLiteDropRecorderPlugin"];
+        if (!droprecorder) {
+            console.log("no drop recorder!");
+            return;
+        }
+
+        for (const item in droprecorder.itemList) {
+            let count = droprecorder.itemList[item];
+            this.createItemRow(item, count);
+        }
+    }
+
+    createItemRow(itemId: string, count: number) {
+        if (!document.game.DATA.items[itemId]) {
+            // e.g. "nothing"
+            return;
+        }
+        let name = document.game.DATA.items[itemId].name;
+        let row = <HTMLElement>document.createElement("div");
+        row.classList.add("genlite-items-row");
+        this.listContainer.appendChild(row);
+        this.itemElements[itemId] = row;
+        row["seo"] = name + ";" + "pri:normal;"
+
+        let icons = <HTMLElement>document.createElement("div");
+        icons.classList.add("genlite-items-iconlist");
+        row.appendChild(icons);
+
+        let icon = this.createIconDiv(itemId);
+        icons.appendChild(icon);
+
+        let title = <HTMLElement>document.createElement("div");
+        title.classList.add("genlite-items-title");
+        title.innerText = name;
+        icons.appendChild(title);
+
+        let arrowHolder = <HTMLElement>document.createElement("div");
+        arrowHolder.classList.add("genlite-arrow-holder");
+        icons.appendChild(arrowHolder);
+
+        let plugin = this;
+
+        let upArrow = <HTMLElement>document.createElement("div");
+        upArrow.innerHTML = '<i class="fas fa-chevron-up"></i>';
+        upArrow.classList.add("genlite-items-arrow-up");
+        arrowHolder.appendChild(upArrow);
+        upArrow.onclick = function (e) {
+            plugin.upPriority(title, itemId);
+        };
+
+        let downArrow = <HTMLElement>document.createElement("div");
+        downArrow.innerHTML = '<i class="fas fa-chevron-down"></i>';
+        downArrow.classList.add("genlite-items-arrow-down");
+        arrowHolder.appendChild(downArrow);
+        downArrow.onclick = function (e) {
+            plugin.downPriority(title, itemId);
+        };
+    }
+
+    createIconDiv(item) {
+        let div = <HTMLImageElement>document.createElement("div");
+        div.classList.add("genlite-items-icon");
+
+        let icon = <HTMLImageElement>document.createElement("img");
+        icon.classList.add("genlite-items-icon");
+        icon.title = item;
+        div.appendChild(icon);
+
+        const itemdata = document.game.DATA.items[item];
+        if (itemdata) {
+            if (itemdata.name) {
+                icon.title = itemdata.name;
+            }
+
+            if (itemdata.image) {
+                icon.src = document.game.getStaticPath('items/' + itemdata.image);
+            } else if (itemdata.images) {
+                let image = itemdata.images[itemdata.images.length - 1][1];
+                icon.src = document.game.getStaticPath('items/' + image);
+            }
+
+            if (itemdata.border) {
+                let path = `items/placeholders/${ itemdata.border }_border.png`;
+                path = document.game.getStaticPath(path);
+                let qual = <HTMLImageElement>document.createElement("img");
+                qual.classList.add("new_ux-inventory_quality-image");
+                qual.src = path;
+                div.appendChild(qual);
+            }
+        }
+
+        if (!icon.src) {
+            icon.src = document.game.getStaticPath('items/unknown.png');
+        }
+        return div;
     }
 
     async handlePluginState(state: boolean) {
         this.isPluginEnabled = state;
+
+        if (this.uiTab) {
+            this.uiTab.style.display = state ? "flex" : "none";
+        }
 
         if (state == false) {
             this.handleShowPlayerNamesSettingChange(false, false);
@@ -160,6 +460,12 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
         }
     }
 
+    async handleItemPrioritizationChange(value: boolean) {
+        this.itemPrioritization = true;
+        if (this.uiTab) {
+            this.uiTab.style.display = value && this.isPluginEnabled ? "flex" : "none";
+        }
+    }
 
     async Character_update(camera: any, dt: any, character: any): Promise<void> {
         if (!this.isPluginEnabled) { return; }
@@ -631,5 +937,27 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
 
             this.NamePlates["Players"][key] = undefined;
         }
+    }
+
+    upPriority(dom: HTMLElement, itemId: string) {
+        let name = document.game.DATA.items[itemId].name;
+        if (dom.classList.contains("genlite-items-low-pri")) {
+            dom.classList.remove("genlite-items-low-pri");
+            this.itemElements[itemId]["seo"] = name + ";" + "pri:normal;";
+            return;
+        }
+        this.itemElements[itemId]["seo"] = name + ";" + "pri:high;";
+        dom.classList.add("genlite-items-high-pri");
+    }
+
+    downPriority(dom: HTMLElement, itemId: string) {
+        let name = document.game.DATA.items[itemId].name;
+        if (dom.classList.contains("genlite-items-high-pri")) {
+            this.itemElements[itemId]["seo"] = name + ";" + "pri:normal;";
+            dom.classList.remove("genlite-items-high-pri");
+            return;
+        }
+        this.itemElements[itemId]["seo"] = name + ";" + "pri:low;";
+        dom.classList.add("genlite-items-low-pri");
     }
 }
