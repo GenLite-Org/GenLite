@@ -559,12 +559,6 @@ export class GenLiteRecipeRecorderPlugin extends GenLitePlugin {
                         output: {}
                     };
                 }
-                if (this.session && this.session.results[this.recipeName] === undefined) {
-                    this.session.results[this.recipeName] = {
-                        input: {},
-                        output: {}
-                    };
-                }
                 return;
             }
 
@@ -678,6 +672,16 @@ export class GenLiteRecipeRecorderPlugin extends GenLitePlugin {
         /* negative values are outputs
             positive are inputs
         */
+
+        if (this.session && this.session.results[this.recipeName] === undefined) {
+            // need to initialize here in case the player begind a new session
+            // after starting a recipe
+            this.session.results[this.recipeName] = {
+                input: {},
+                output: {}
+            };
+        }
+
         let isNothing = true;
         for (let i in itemList) {
             if (i == "undefined")
