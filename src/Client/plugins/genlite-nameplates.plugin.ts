@@ -29,6 +29,7 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
     settingsMenu: HTMLElement = null;
     listContainer: HTMLElement = null;
     itemElements: Record<string, HTMLElement> = {};
+    itemPriorities: Record<string, string> = {};
 
     pluginSettings: Settings = {
         "Global Scaling": {
@@ -84,6 +85,12 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
 
     async init() {
         document.genlite.registerPlugin(this);
+        document.genlite.database.add((db) => {
+            if (db.objectStoreNames.contains('itempri')) return;
+            let store = db.createObjectStore('itempri', {
+                keyPath: 'itemId',
+            });
+        });
 
         // Parse the JSON array stored in localStorage and convert it to array of strings (the NPC names to hide)
         this.untaggedNPCs = JSON.parse(localStorage.getItem("GenLite.NamePlates.HiddenNPCs") || "[]");
@@ -939,15 +946,68 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
         }
     }
 
+    loadPrioritiesFromIDB() {
+        this.itemPriorities = {};
+        let plugin = this;
+        document.genlite.database.storeTx(
+            'itempri',
+            'readwrite',
+            (store) => {
+                store.openCursor(null, 'prev').onsuccess = (e) => {
+                    const cursor = e.target.result;
+                    let item = cursor.value;
+                    plugin.setPriority(item.itemId, item.value);
+                    cursor.continue();
+                };
+            }
+        );
+    }
+
+    setPriority(itemId: string, value: "low"|"normal"|"high") {
+        if (value === "normal" && this.itemPriorities[itemId]) {
+            delete this.itemPriorities[itemId];
+        } else if (value !== "normal") {
+            this.itemPriorities[itemId] = value;
+        }
+
+        document.genlite.database.storeTx(
+            'itempri',
+            'readwrite',
+            (store) => {
+                if (value === "normal") {
+                    let request = store.delete(itemId);
+                } else {
+                    let request = store.put({
+                        itemId: itemId,
+                        value: value,
+                    });
+                }
+            }
+        );
+    }
+
+    getPriority(itemId: string) {
+        switch (this.itemPriorities[itemId]) {
+            case "high":
+                return 2;
+            case "low":
+                return -1;
+            default:
+                return 1;
+        }
+    }
+
     upPriority(dom: HTMLElement, itemId: string) {
         let name = document.game.DATA.items[itemId].name;
         if (dom.classList.contains("genlite-items-low-pri")) {
             dom.classList.remove("genlite-items-low-pri");
             this.itemElements[itemId]["seo"] = name + ";" + "pri:normal;";
+            this.setPriority(itemId, "normal");
             return;
         }
         this.itemElements[itemId]["seo"] = name + ";" + "pri:high;";
         dom.classList.add("genlite-items-high-pri");
+        this.setPriority(itemId, "high");
     }
 
     downPriority(dom: HTMLElement, itemId: string) {
@@ -955,9 +1015,11 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
         if (dom.classList.contains("genlite-items-high-pri")) {
             this.itemElements[itemId]["seo"] = name + ";" + "pri:normal;";
             dom.classList.remove("genlite-items-high-pri");
+            this.setPriority(itemId, "normal");
             return;
         }
         this.itemElements[itemId]["seo"] = name + ";" + "pri:low;";
         dom.classList.add("genlite-items-low-pri");
+        this.setPriority(itemId, "low");
     }
 }
