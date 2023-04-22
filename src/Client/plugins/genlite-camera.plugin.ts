@@ -49,6 +49,11 @@ export class GenLiteCameraPlugin extends GenLitePlugin {
 
     isPluginEnabled = true;
 
+    photoCanvas: HTMLCanvasElement = null;
+    photoScene: any = null;    // THREE.Scene
+    photoRenderer: any = null; // THREE.WebGlRenderer
+    photoCamera: any = null;   // THREE.PerspectiveCamera
+
     WORLDMANAGER: WorldManager
 
     pluginSettings: Settings = {
@@ -295,19 +300,22 @@ export class GenLiteCameraPlugin extends GenLitePlugin {
     }
 
     getPlayerPictureByPid(pid: string, callback) {
+        if (!this.photoCanvas) {
+            this.log("initializing profile camera");
+            this.photoCanvas = <HTMLCanvasElement>document.createElement('canvas');
+            this.photoScene = new document.game.THREE.Scene();
+            this.photoRenderer = new document.game.THREE.WebGLRenderer({
+                canvas: this.photoCanvas
+            });
+            this.photoRenderer.setClearColor(new document.game.THREE.Color('#4d4d4d'));
+
+            this.photoCamera = new document.game.THREE.PerspectiveCamera(45, 1.0, 0.1, 65);
+            this.photoCamera.position.y = 0.5;
+            this.photoCamera.position.z = 0.5;
+        }
+
         let player = document.game.GAME.players[pid];
         let threeObj = player.object.threeObject;
-
-        let canvas = <HTMLCanvasElement>document.createElement('canvas');
-        let scene = new document.game.THREE.Scene();
-        let renderer = new document.game.THREE.WebGLRenderer({
-            canvas: canvas
-        });
-        renderer.setClearColor(new document.game.THREE.Color('#4d4d4d'));
-
-        let camera = new document.game.THREE.PerspectiveCamera(45, 1.0, 0.1, 65);
-        camera.position.y = 0.5;
-        camera.position.z = 0.5;
 
         let s_ = document.client.get('s_');
         let mesh = player.object.spineMesh;
@@ -316,17 +324,16 @@ export class GenLiteCameraPlugin extends GenLitePlugin {
         mesh.portraitMesh.scale.copy(threeObj.scale);
         mesh.portraitMesh.scale.multiplyScalar(0.002025 / 0.1);
         mesh.portraitMesh.translateY(-0.7);
-        scene.add(mesh.portraitMesh);
+        this.photoScene.add(mesh.portraitMesh);
 
         try {
-            renderer.clear();
-            renderer.render(scene, camera);
-            let image = renderer.domElement.toDataURL("image/png");
+            this.photoRenderer.clear();
+            this.photoRenderer.render(this.photoScene, this.photoCamera);
+            let image = this.photoRenderer.domElement.toDataURL("image/png");
             setTimeout(() => { callback(image); }, 0);
         } finally {
-            scene.remove(mesh.portraitMesh);
+            this.photoScene.remove(mesh.portraitMesh);
             mesh.portraitMesh = null;
-            renderer.dispose();
         }
     }
 
