@@ -567,7 +567,8 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
 
     NPC_intersects(ray: any, list: any, NPC: any): void {
         // Only log if the number of elements in the list is greater than 1
-        if (list.length == 0) { return; }
+        if (list.length == 0) return;
+        if (!this.isPluginEnabled || !this.showNPCNames) return;
 
         // Create a Map to store the actions
         let NPCs = new Map();
@@ -956,6 +957,8 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
     }
 
     async ItemStack_intersects(ray, list, itemstack) {
+        if (!this.isPluginEnabled || !this.itemPrioritization) return;
+
         let n = ray.intersectObject(itemstack.mesh);
         if (!n || n.length == 0 || list.length == 0) return;
 
@@ -1105,6 +1108,7 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
     }
 
     getItemColor(itemId: string) {
+        if (!this.itemPrioritization) return "#ffffff";
         switch (this.itemPriorities[itemId]) {
             case "high":
                 return "gold";
@@ -1116,6 +1120,7 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
     }
 
     getPriority(itemId: string) {
+        if (!this.itemPrioritization) return 0;
         switch (this.itemPriorities[itemId]) {
             case "high":
                 return 1;
