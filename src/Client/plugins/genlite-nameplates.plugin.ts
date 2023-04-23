@@ -23,6 +23,13 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
     showNPCNames: boolean = false;
     showItemNames: boolean = false;
     invertTagging: boolean = false;
+    itemPrioritization: boolean = true;
+
+    uiTab: HTMLElement = null;
+    settingsMenu: HTMLElement = null;
+    listContainer: HTMLElement = null;
+    itemElements: Record<string, HTMLElement> = {};
+    itemPriorities: Record<string, "low"|"high"> = {};
 
     pluginSettings: Settings = {
         "Global Scaling": {
@@ -58,7 +65,12 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
             type: 'checkbox',
             value: this.showItemNames,
             stateHandler: this.handleShowItemNamesSettingChange.bind(this)
-        }
+        },
+        "Item Prioritization": {
+            type: 'checkbox',
+            value: this.itemPrioritization,
+            stateHandler: this.handleItemPrioritizationChange.bind(this)
+        },
     };
 
 
@@ -73,17 +85,333 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
 
     async init() {
         document.genlite.registerPlugin(this);
+        document.genlite.database.add((db) => {
+            if (db.objectStoreNames.contains('itempri')) return;
+            let store = db.createObjectStore('itempri', {
+                keyPath: 'itemId',
+            });
+        });
 
         // Parse the JSON array stored in localStorage and convert it to array of strings (the NPC names to hide)
         this.untaggedNPCs = JSON.parse(localStorage.getItem("GenLite.NamePlates.HiddenNPCs") || "[]");
     }
 
     async postInit() {
+        this.createCSS();
+        this.createUITab();
         this.pluginSettings = document.genlite.ui.registerPlugin("Name Plates", null, this.handlePluginState.bind(this), this.pluginSettings);
+
+        let plugin = this;
+        setTimeout(function() {
+            plugin.loadPrioritiesFromIDB();
+        }, 200);
+    }
+
+    createCSS() {
+        const style = document.createElement('style');
+        style.innerHTML = `
+            .genlite-items-container {
+                display: flex;
+                flex-direction: column;
+                overflow-x: hidden;
+                color: #ffd593;
+                font-family: acme,times new roman,Times,serif;
+                height: 100%;
+            }
+
+            .genlite-items-list {
+                display: flex;
+                flex-direction: column;
+                overflow-y: scroll;
+                height: 100%;
+                flex-grow: 1;
+                border-bottom: 1px solid rgb(66, 66, 66);
+            }
+
+            .genlite-items-row {
+                display: flex;
+                flex-direction: column;
+                flex-shrink: 0;
+                border-bottom: 1px solid rgb(66, 66, 66);
+                border-top: 1px solid rgb(0, 0, 0);
+            }
+
+            .genlite-items-iconlist {
+                display: flex;
+                column-gap: 0.5em;
+                padding: 0.25em;
+                padding-left: 1em;
+                position: relative;
+                align-items: center;
+            }
+
+            .genlite-items-icon {
+                width: 28px;
+                height: 28px;
+                position: relative;
+                flex-shrink: 0;
+            }
+
+            .genlite-items-search-row {
+                width: 100%;
+                height: 25px;
+                border-bottom: 1px solid rgb(66, 66, 66);
+                display: flex;
+                align-items: center;
+            }
+
+            .genlite-items-search {
+                background-color: rgb(42, 40, 40);
+                color: rgb(255, 255, 255);
+                font-size: 16px;
+                border-radius: 0px;
+                padding-left: 10px;
+                padding-right: 10px;
+                box-sizing: border-box;
+                outline: none;
+                width: 100%;
+                border: medium none;
+                margin-left: auto;
+                margin-right: auto
+            }
+
+            .genlite-items-title {
+                flex-grow: 1;
+                display: flex;
+                align-items: center;
+                color: white;
+            }
+
+            .genlite-items-high-pri {
+                color: gold;
+                text-shadow: 0 0 2px goldenrod;
+            }
+
+            .genlite-items-low-pri {
+                color: gray;
+                text-decoration-line: line-through;
+            }
+
+            .genlite-arrow-holder {
+                flex-shrink: 0;
+                padding-right: 1em;
+                display: flex;
+                flex-direction: column;
+            }
+
+            .genlite-items-arrow-up {
+                color: gold;
+                cursor: pointer;
+            }
+
+            .genlite-items-arrow-down {
+                color: lightgray;
+                cursor: pointer;
+            }
+
+        `;
+        document.head.appendChild(style);
+    }
+
+    createUITab() {
+        if (this.uiTab) {
+            // not creating, redrawing
+            this.settingsMenu.innerHTML = '';
+            this.itemElements = {};
+        } else {
+            this.settingsMenu = <HTMLElement>document.createElement("div");
+            this.settingsMenu.classList.add("genlite-items-container");
+        }
+
+        // search bar
+        let searchrow = <HTMLElement>document.createElement("div");
+        searchrow.classList.add("genlite-items-search-row");
+        this.settingsMenu.appendChild(searchrow);
+
+        let search = <HTMLInputElement>document.createElement("input");
+        searchrow.appendChild(search);
+        search.id = "genlite-item-priority-search";
+        search.classList.add("genlite-items-search");
+        search.placeholder = "Search Items...";
+        search.type = "text";
+
+        search.onfocus = () => {
+            document.game.CHAT.focus_locked = true;
+        }
+
+        search.onblur = () => {
+            document.game.CHAT.focus_locked = false;
+        }
+
+        search.oninput = function (e) {
+            let searches = []
+            let query = search.value.trim().toLowerCase();
+            for (const s of query.split("|")) {
+                let values = [];
+                for (const v of s.trim().split(",")) {
+                    values.push(v.trim());
+                }
+                searches.push(values);
+            }
+
+            let rows = document.getElementsByClassName("genlite-items-row");
+            for (let i = 0; i < rows.length; i++) {
+                let row = rows[i] as HTMLElement;
+                let content = row["seo"].toLowerCase();
+                if (query === "") {
+                    row.style.removeProperty("display");
+                    continue;
+                }
+
+                let match = true;
+                for (let s of searches) {
+                    match = true;
+                    for (let v of s) {
+                        let invert = v[0] === "-";
+                        if (invert) {
+                            v = v.substr(1);
+                        }
+
+                        if (!invert && !content.includes(v)) {
+                            match = false;
+                            break;
+                        } else if (invert && content.includes(v)) {
+                            match = false;
+                            break;
+                        }
+                    }
+
+                    if (match) break;
+                }
+
+                if (match) {
+                    row.style.removeProperty("display");
+                } else {
+                    row.style.display = "none";
+                }
+            }
+        };
+
+        // item list
+        this.listContainer = <HTMLElement>document.createElement("div");
+        this.listContainer.classList.add("genlite-items-list");
+        this.settingsMenu.appendChild(this.listContainer);
+        this.createItemsList();
+
+        if (!this.uiTab) {
+            this.uiTab = document.genlite.ui.addTab("sack-dollar", "Item Priority", this.settingsMenu, this.isPluginEnabled);
+        }
+    }
+
+    createItemsList() {
+        let droprecorder = document["GenLiteDropRecorderPlugin"];
+        if (droprecorder) {
+            for (const item in droprecorder.itemList) {
+                let count = droprecorder.itemList[item];
+                this.createItemRow(item, count);
+            }
+        }
+
+        let reciperecorder = document["GenLiteRecipeRecorderPlugin"];
+        if (reciperecorder) {
+            for (const item in reciperecorder.itemList) {
+                this.createItemRow(item, 0);
+            }
+        }
+    }
+
+    createItemRow(itemId: string, count: number) {
+        if (!document.game.DATA.items[itemId] || !!this.itemElements[itemId]) {
+            // e.g. "nothing" or already added items
+            return;
+        }
+        let name = document.game.DATA.items[itemId].name;
+        let row = <HTMLElement>document.createElement("div");
+        row.classList.add("genlite-items-row");
+        this.listContainer.appendChild(row);
+        this.itemElements[itemId] = row;
+        row["seo"] = name + ";id:" + itemId + ";pri:normal;"
+
+        let icons = <HTMLElement>document.createElement("div");
+        icons.classList.add("genlite-items-iconlist");
+        row.appendChild(icons);
+
+        let icon = this.createIconDiv(itemId);
+        icons.appendChild(icon);
+
+        let title = <HTMLElement>document.createElement("div");
+        title.classList.add("genlite-items-title");
+        title.innerText = name;
+        icons.appendChild(title);
+        row["titleElement"] = title;
+
+        let arrowHolder = <HTMLElement>document.createElement("div");
+        arrowHolder.classList.add("genlite-arrow-holder");
+        icons.appendChild(arrowHolder);
+
+        let plugin = this;
+
+        let upArrow = <HTMLElement>document.createElement("div");
+        upArrow.innerHTML = '<i class="fas fa-chevron-up"></i>';
+        upArrow.classList.add("genlite-items-arrow-up");
+        arrowHolder.appendChild(upArrow);
+        upArrow.onclick = function (e) {
+            plugin.upPriority(itemId);
+        };
+
+        let downArrow = <HTMLElement>document.createElement("div");
+        downArrow.innerHTML = '<i class="fas fa-chevron-down"></i>';
+        downArrow.classList.add("genlite-items-arrow-down");
+        arrowHolder.appendChild(downArrow);
+        downArrow.onclick = function (e) {
+            plugin.downPriority(itemId);
+        };
+    }
+
+    createIconDiv(item) {
+        let div = <HTMLImageElement>document.createElement("div");
+        div.classList.add("genlite-items-icon");
+
+        let icon = <HTMLImageElement>document.createElement("img");
+        icon.classList.add("genlite-items-icon");
+        icon.title = item;
+        div.appendChild(icon);
+
+        const itemdata = document.game.DATA.items[item];
+        if (itemdata) {
+            if (itemdata.name) {
+                icon.title = itemdata.name;
+            }
+
+            if (itemdata.image) {
+                icon.src = document.game.getStaticPath('items/' + itemdata.image);
+            } else if (itemdata.images) {
+                let image = itemdata.images[itemdata.images.length - 1][1];
+                icon.src = document.game.getStaticPath('items/' + image);
+            }
+
+            if (itemdata.border) {
+                let path = `items/placeholders/${ itemdata.border }_border.png`;
+                path = document.game.getStaticPath(path);
+                let qual = <HTMLImageElement>document.createElement("img");
+                qual.classList.add("new_ux-inventory_quality-image");
+                qual.src = path;
+                div.appendChild(qual);
+            }
+        }
+
+        if (!icon.src) {
+            icon.src = document.game.getStaticPath('items/unknown.png');
+        }
+        return div;
     }
 
     async handlePluginState(state: boolean) {
         this.isPluginEnabled = state;
+
+        if (this.uiTab) {
+            this.uiTab.style.display = state ? "flex" : "none";
+        }
 
         if (state == false) {
             this.handleShowPlayerNamesSettingChange(false, false);
@@ -160,6 +488,12 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
         }
     }
 
+    async handleItemPrioritizationChange(value: boolean) {
+        this.itemPrioritization = true;
+        if (this.uiTab) {
+            this.uiTab.style.display = value && this.isPluginEnabled ? "flex" : "none";
+        }
+    }
 
     async Character_update(camera: any, dt: any, character: any): Promise<void> {
         if (!this.isPluginEnabled) { return; }
@@ -524,42 +858,68 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
         if (!document.game.GAME.item_stacks[itemstack.id]) { return; }
 
         let height = 0.25;
-        for (const key in itemstack.item_info) {
+
+        // sort by priority
+        let keys = Object.keys(itemstack.item_info);
+        let sorted = keys.sort((a, b) => this.getPriority(a) - this.getPriority(b));
+
+        for (const key of sorted) {
             const currItem = itemstack.item_info[key];
             const uid = Object.keys(currItem.ids)[0];
-            if (!this.NamePlates["Items"][uid]) {
-                this.NamePlates["Items"][uid] = new Text();
-                this.NamePlates["Items"][uid].text = currItem.name;
-                this.NamePlates["Items"][uid].fontSize = 0.15;
-                this.NamePlates["Items"][uid].font = "https://raw.githubusercontent.com/KKonaOG/Old-GenLite/main/Acme-Regular.ttf";
-                this.NamePlates["Items"][uid].color = '#ffffff';
-                this.NamePlates["Items"][uid].anchorX = 'center';
-                this.NamePlates["Items"][uid].anchorY = 'bottom';
 
-                this.NamePlates["Items"][uid].outlineColor = "#000000";
-                this.NamePlates["Items"][uid].outlineWidth = 0.010;
-                this.NamePlates["Items"][uid].outlineBlur = 0.005;
+            const priority = this.getPriority(key);
+            let text = this.NamePlates["Items"][uid];
+            if (priority >= 0 && !text) {
+                text = new Text();
+                this.NamePlates["Items"][uid] = text;
 
-                this.NamePlates["Items"][uid].position.x = itemstack.worldPos.x;
-                this.NamePlates["Items"][uid].position.y = itemstack.worldPos.y + height;
-                this.NamePlates["Items"][uid].position.z = itemstack.worldPos.z;
-                document.game.GRAPHICS.scene.threeScene.add(this.NamePlates["Items"][uid]);
+                text.text = currItem.name;
+                text.fontSize = 0.15;
+                text.font = "https://raw.githubusercontent.com/KKonaOG/Old-GenLite/main/Acme-Regular.ttf";
+                text.color = this.getItemColor(key);
+                text.anchorX = 'center';
+                text.anchorY = 'bottom';
 
-                this.NamePlates["Items"][uid].sync(() => {
-                    this.NamePlates["Items"][uid].renderOrder = 10000;
-                    this.NamePlates["Items"][uid].material[0].depthTest = false;
-                    this.NamePlates["Items"][uid].material[0].depthWrite = false;
-                    this.NamePlates["Items"][uid].material[1].depthTest = false;
-                    this.NamePlates["Items"][uid].material[1].depthWrite = false;
+                text.outlineColor = "#000000";
+                text.outlineWidth = 0.010;
+                text.outlineBlur = 0.005;
+
+                text.position.x = itemstack.worldPos.x;
+                text.position.y = itemstack.worldPos.y + height;
+                text.position.z = itemstack.worldPos.z;
+                document.game.GRAPHICS.scene.threeScene.add(text);
+
+                text.sync(() => {
+                    text.renderOrder = 10000;
+                    text.material[0].depthTest = false;
+                    text.material[0].depthWrite = false;
+                    text.material[1].depthTest = false;
+                    text.material[1].depthWrite = false;
                 });
-            } else {
+            } else if (priority >= 0) {
                 // Update the Text with an x amount of items (number of ids associated with currItem)
                 if (Object.keys(currItem.ids).length > 1) {
-                    this.NamePlates["Items"][uid].text = currItem.name + " x" + Object.keys(currItem.ids).length;
+                    text.text = currItem.name + " x" + Object.keys(currItem.ids).length;
                 } else {
-                    this.NamePlates["Items"][uid].text = currItem.name;
+                    text.text = currItem.name;
                 }
+            } else if (text) {
+                // it exists, but priority <= means we deprioritized it
+                document.game.GRAPHICS.scene.threeScene.remove(text);
+                delete this.NamePlates["Items"][uid];
+                text.dispose();
             }
+
+            if (!text) {
+                // removed, or never added
+                continue;
+            }
+
+            let newColor = this.getItemColor(key);
+            if (text.color != newColor) {
+                text.color = newColor;
+            }
+
             // Update Scaling
             if (!this.scaleDistance) {
                 var scaleVector = new document.game.THREE.Vector3();
@@ -569,8 +929,6 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
                 this.NamePlates["Items"][uid].scale.set(this.scaleFactor, this.scaleFactor, this.scaleFactor);
             }
 
-
-
             // Update Position
             this.NamePlates["Items"][uid].position.x = itemstack.worldPos.x;
             this.NamePlates["Items"][uid].position.y = itemstack.worldPos.y + height;
@@ -579,6 +937,51 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
             // Update Orientation
             this.NamePlates["Items"][uid].quaternion.copy(camera.quaternion);
             height += 0.15;
+        }
+    }
+
+    async ItemStack_intersects(ray, list, itemstack) {
+        let n = ray.intersectObject(itemstack.mesh);
+        if (!n || n.length == 0 || list.length == 0) return;
+
+        let distance = 0;
+        let items = [];
+        let priorityOption = null;
+
+        for (let entry of list) {
+            distance = entry.distance;
+            if (entry.text === 'Set Priorities') {
+                priorityOption = entry;
+            }
+            if (entry.text.startsWith('Take')) {
+                // itemId is not stored in the list entry, but theres a
+                // roundabout way of getting to it through an instance.
+                //
+                // TODO: can there be multiple item_info.ids with different
+                //       item ids? or empty ids?
+                const itemInfo = entry.object;
+                const inst = Object.keys(itemInfo.ids)[0];
+                const itemId = document.game.GAME.items[inst].item_keys[inst].item_id;
+                const priority = this.getPriority(itemId);
+                entry.priority += priority * 50;
+                items.push(itemId);
+            }
+        }
+
+        if (priorityOption === null) {
+            let obj = {
+                text: () => '',
+            };
+            list.push({
+                color: 'aqua',
+                distance: distance,
+                priority: -100,
+                object: obj,
+                text: 'Set Priorities',
+                action: () => document['GenLiteNamePlatesPlugin'].priorityEditor(items)
+            });
+        } else {
+            priorityOption.action = () => document['GenLiteNamePlatesPlugin'].priorityEditor(items);
         }
     }
 
@@ -631,5 +1034,129 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
 
             this.NamePlates["Players"][key] = undefined;
         }
+    }
+
+    loadPrioritiesFromIDB() {
+        this.itemPriorities = {};
+        let plugin = this;
+        document.genlite.database.storeTx(
+            'itempri',
+            'readwrite',
+            (store) => {
+                store.openCursor(null, 'prev').onsuccess = (e) => {
+                    const cursor = e.target.result;
+                    if (cursor === null) return;
+                    let item = cursor.value;
+                    switch (item.value) {
+                        case "high":
+                            plugin.upPriority(item.itemId);
+                            break;
+                        case "low":
+                            plugin.downPriority(item.itemId);
+                            break;
+                        default:
+                    }
+                    cursor.continue();
+                };
+            }
+        );
+    }
+
+    setPriority(itemId: string, value: "low"|"normal"|"high") {
+        if (value === "normal" && this.itemPriorities[itemId]) {
+            delete this.itemPriorities[itemId];
+        } else if (value !== "normal") {
+            this.itemPriorities[itemId] = value;
+        }
+
+        document.genlite.database.storeTx(
+            'itempri',
+            'readwrite',
+            (store) => {
+                if (value === "normal") {
+                    let request = store.delete(itemId);
+                } else {
+                    let request = store.put({
+                        itemId: itemId,
+                        value: value,
+                    });
+                }
+            }
+        );
+    }
+
+    getItemColor(itemId: string) {
+        switch (this.itemPriorities[itemId]) {
+            case "high":
+                return "gold";
+            case "low":
+                return "gray";
+            default:
+                return "#ffffff";
+        }
+    }
+
+    getPriority(itemId: string) {
+        switch (this.itemPriorities[itemId]) {
+            case "high":
+                return 1;
+            case "low":
+                return -1;
+            default:
+                return 0;
+        }
+    }
+
+    upPriority(itemId: string) {
+        let element = this.itemElements[itemId];
+        let dom = element["titleElement"] as HTMLElement;
+
+        let name = document.game.DATA.items[itemId].name;
+        element["seo"] = name + ";id:" + itemId + ";";
+        if (dom.classList.contains("genlite-items-low-pri")) {
+            dom.classList.remove("genlite-items-low-pri");
+            element["seo"] += "pri:normal;";
+            this.setPriority(itemId, "normal");
+            return;
+        }
+        element["seo"] += "pri:high;";
+        dom.classList.add("genlite-items-high-pri");
+        this.setPriority(itemId, "high");
+    }
+
+    downPriority(itemId: string) {
+        let element = this.itemElements[itemId];
+        let dom = element["titleElement"] as HTMLElement;
+
+        let name = document.game.DATA.items[itemId].name;
+        element["seo"] = name + ";id:" + itemId + ";";
+        if (dom.classList.contains("genlite-items-high-pri")) {
+            element["seo"] += "pri:normal;";
+            dom.classList.remove("genlite-items-high-pri");
+            this.setPriority(itemId, "normal");
+            return;
+        }
+        element["seo"] += "pri:low;";
+        dom.classList.add("genlite-items-low-pri");
+        this.setPriority(itemId, "low");
+    }
+
+    priorityEditor(itemIds: Array<string>) {
+        let ui = document['GenLiteUIPlugin'];
+
+        // TODO: this is hacky, and should be a ui plugin method
+        // if ui is closed, open it
+        if (ui.sidePanel.style.right === '-302px') {
+            let button = document.getElementById('genlite-ui-close-button');
+            button.dispatchEvent(new Event('click'));
+        }
+
+        setTimeout(function() {
+            ui.showTab('Item Priority');
+
+            let search = document.getElementById("genlite-item-priority-search") as HTMLInputElement;
+            search.value = 'id:' + itemIds.join(';|id:') + ';';
+            search.dispatchEvent(new Event('input'));
+        }, 100);
     }
 }

@@ -40,6 +40,7 @@ export class GenLiteDropRecorderPlugin extends GenLitePlugin {
 
     /* key for dropTable -> Monster_Name-Monster_Level */
     dropTable = {};
+    itemList: Record<string, number> = {};
 
     packList;
 
@@ -77,6 +78,13 @@ export class GenLiteDropRecorderPlugin extends GenLitePlugin {
         for(let key in this.dropTable){
             if(this.dropTable[key].location)
                 delete (this.dropTable[key].location);
+        }
+
+        let itemListString = localStorage.getItem("genliteItemList");
+        if (itemListString === null) {
+            this.rebuildItemList();
+        } else {
+            this.itemList = JSON.parse(itemListString);
         }
     }
 
@@ -156,7 +164,7 @@ export class GenLiteDropRecorderPlugin extends GenLitePlugin {
             .genlite-drops-iconlist {
                 display: flex;
                 column-gap: 0.5em;
-                padding: 0.25em;
+                padding: 1em;
                 overflow-x: hidden;
             }
 
@@ -673,6 +681,8 @@ export class GenLiteDropRecorderPlugin extends GenLitePlugin {
                 this.dropTable[dropKey].drops[drop.Item_Code] = 0;
             this.dropTable[dropKey].drops[drop.Item_Code] += drop.Item_Quantity;
             localStorage.setItem("genliteDropTable", JSON.stringify(this.dropTable));
+
+            this.addToItemList(drop.Item_Code, drop.Item_Quantity);
         }
         this.updateMonsterRow(dropKey);
     }
@@ -717,5 +727,27 @@ export class GenLiteDropRecorderPlugin extends GenLitePlugin {
             let el = eles[i] as HTMLElement;
             el.style.removeProperty('display');
         }
+    }
+
+    rebuildItemList() {
+        this.itemList = {};
+        for (const monsterId in this.dropTable) {
+            if (!this.dropTable[monsterId].drops) continue
+            for (const item in this.dropTable[monsterId].drops) {
+                this.addToItemList(item, this.dropTable[monsterId].drops[item]);
+            }
+        }
+        // TODO(IDB)
+        // localStorage.setItem("genliteItemList", JSON.stringify(this.itemList));
+    }
+
+    addToItemList(item: string, count: number) {
+        if (this.itemList[item] === undefined) {
+            this.itemList[item] = count;
+        } else {
+            this.itemList[item] += count;
+        }
+        // TODO(IDB)
+        // localStorage.setItem("genliteItemList", JSON.stringify(this.itemList));
     }
 }

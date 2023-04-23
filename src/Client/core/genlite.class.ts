@@ -78,6 +78,7 @@ export class GenLite {
         this.installHook('Game', 'deletePlayer');
         this.installHook('Game', 'deleteItem');
         this.installHook('ItemStack', 'update');
+        this.installHook('ItemStack', 'intersects');
         this.installHook('NPC', 'update');
 
     }
