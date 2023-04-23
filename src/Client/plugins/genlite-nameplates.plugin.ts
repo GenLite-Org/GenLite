@@ -337,7 +337,7 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
     createItemRow(itemId: string, count: number) {
         if (!document.game.DATA.items[itemId] || !!this.itemElements[itemId]) {
             // e.g. "nothing" or already added items
-            return;
+            return null;
         }
         let name = document.game.DATA.items[itemId].name;
         let row = <HTMLElement>document.createElement("div");
@@ -380,6 +380,7 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
         downArrow.onclick = function (e) {
             plugin.downPriority(itemId);
         };
+        return row;
     }
 
     createIconDiv(item) {
@@ -980,8 +981,9 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
                 entry.priority += priority * 50;
                 items.push(itemId);
 
-                this.createItemRow(itemId, 0);
-                this.sortItemList();
+                if (this.createItemRow(itemId, 0) != null) {
+                    this.sortItemList();
+                }
             }
         }
 
