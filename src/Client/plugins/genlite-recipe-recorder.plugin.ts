@@ -36,6 +36,8 @@ export class GenLiteRecipeRecorderPlugin extends GenLitePlugin {
     listContainer: HTMLElement = null;
     recipeElements: Record<string, HTMLElement> = {};
 
+    itemList: Record<string, number> = {};
+
     async init() {
         document.genlite.registerPlugin(this);
         window.addEventListener('keydown', this.keyDownHandler.bind(this));
@@ -50,6 +52,21 @@ export class GenLiteRecipeRecorderPlugin extends GenLitePlugin {
             let saved = JSON.parse(dropTableString);
             this.recipeResults = saved.recipe ? saved.recipe : {};
             this.gatherResults = saved.gathering ? saved.gathering : {};
+            for (const key in this.recipeResults) {
+                for (const itemId in this.recipeResults[key].input) {
+                    this.itemList[itemId] = 0;
+                }
+                for (const itemId in this.recipeResults[key].output) {
+                    this.itemList[itemId] = 0;
+                }
+            }
+            for (const skill in this.gatherResults) {
+                for (const source in this.gatherResults[skill]) {
+                    for (const itemId in this.gatherResults[skill][source]) {
+                        this.itemList[itemId] = 0;
+                    }
+                }
+            }
         }
     }
 

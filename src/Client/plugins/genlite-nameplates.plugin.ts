@@ -29,7 +29,7 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
     settingsMenu: HTMLElement = null;
     listContainer: HTMLElement = null;
     itemElements: Record<string, HTMLElement> = {};
-    itemPriorities: Record<string, string> = {};
+    itemPriorities: Record<string, "low"|"high"> = {};
 
     pluginSettings: Settings = {
         "Global Scaling": {
@@ -100,6 +100,11 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
         this.createCSS();
         this.createUITab();
         this.pluginSettings = document.genlite.ui.registerPlugin("Name Plates", null, this.handlePluginState.bind(this), this.pluginSettings);
+
+        let plugin = this;
+        setTimeout(function() {
+            plugin.loadPrioritiesFromIDB();
+        }, 200);
     }
 
     createCSS() {
@@ -289,20 +294,24 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
 
     createItemsList() {
         let droprecorder = document["GenLiteDropRecorderPlugin"];
-        if (!droprecorder) {
-            console.log("no drop recorder!");
-            return;
+        if (droprecorder) {
+            for (const item in droprecorder.itemList) {
+                let count = droprecorder.itemList[item];
+                this.createItemRow(item, count);
+            }
         }
 
-        for (const item in droprecorder.itemList) {
-            let count = droprecorder.itemList[item];
-            this.createItemRow(item, count);
+        let reciperecorder = document["GenLiteRecipeRecorderPlugin"];
+        if (reciperecorder) {
+            for (const item in reciperecorder.itemList) {
+                this.createItemRow(item, 0);
+            }
         }
     }
 
     createItemRow(itemId: string, count: number) {
-        if (!document.game.DATA.items[itemId]) {
-            // e.g. "nothing"
+        if (!document.game.DATA.items[itemId] || !!this.itemElements[itemId]) {
+            // e.g. "nothing" or already added items
             return;
         }
         let name = document.game.DATA.items[itemId].name;
@@ -323,6 +332,7 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
         title.classList.add("genlite-items-title");
         title.innerText = name;
         icons.appendChild(title);
+        row["titleElement"] = title;
 
         let arrowHolder = <HTMLElement>document.createElement("div");
         arrowHolder.classList.add("genlite-arrow-holder");
@@ -335,7 +345,7 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
         upArrow.classList.add("genlite-items-arrow-up");
         arrowHolder.appendChild(upArrow);
         upArrow.onclick = function (e) {
-            plugin.upPriority(title, itemId);
+            plugin.upPriority(itemId);
         };
 
         let downArrow = <HTMLElement>document.createElement("div");
@@ -343,7 +353,7 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
         downArrow.classList.add("genlite-items-arrow-down");
         arrowHolder.appendChild(downArrow);
         downArrow.onclick = function (e) {
-            plugin.downPriority(title, itemId);
+            plugin.downPriority(itemId);
         };
     }
 
@@ -837,42 +847,68 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
         if (!document.game.GAME.item_stacks[itemstack.id]) { return; }
 
         let height = 0.25;
-        for (const key in itemstack.item_info) {
+
+        // sort by priority
+        let keys = Object.keys(itemstack.item_info);
+        let sorted = keys.sort((a, b) => this.getPriority(a) - this.getPriority(b));
+
+        for (const key of sorted) {
             const currItem = itemstack.item_info[key];
             const uid = Object.keys(currItem.ids)[0];
-            if (!this.NamePlates["Items"][uid]) {
-                this.NamePlates["Items"][uid] = new Text();
-                this.NamePlates["Items"][uid].text = currItem.name;
-                this.NamePlates["Items"][uid].fontSize = 0.15;
-                this.NamePlates["Items"][uid].font = "https://raw.githubusercontent.com/KKonaOG/Old-GenLite/main/Acme-Regular.ttf";
-                this.NamePlates["Items"][uid].color = '#ffffff';
-                this.NamePlates["Items"][uid].anchorX = 'center';
-                this.NamePlates["Items"][uid].anchorY = 'bottom';
 
-                this.NamePlates["Items"][uid].outlineColor = "#000000";
-                this.NamePlates["Items"][uid].outlineWidth = 0.010;
-                this.NamePlates["Items"][uid].outlineBlur = 0.005;
+            const priority = this.getPriority(key);
+            let text = this.NamePlates["Items"][uid];
+            if (priority >= 0 && !text) {
+                text = new Text();
+                this.NamePlates["Items"][uid] = text;
 
-                this.NamePlates["Items"][uid].position.x = itemstack.worldPos.x;
-                this.NamePlates["Items"][uid].position.y = itemstack.worldPos.y + height;
-                this.NamePlates["Items"][uid].position.z = itemstack.worldPos.z;
-                document.game.GRAPHICS.scene.threeScene.add(this.NamePlates["Items"][uid]);
+                text.text = currItem.name;
+                text.fontSize = 0.15;
+                text.font = "https://raw.githubusercontent.com/KKonaOG/Old-GenLite/main/Acme-Regular.ttf";
+                text.color = this.getItemColor(key);
+                text.anchorX = 'center';
+                text.anchorY = 'bottom';
 
-                this.NamePlates["Items"][uid].sync(() => {
-                    this.NamePlates["Items"][uid].renderOrder = 10000;
-                    this.NamePlates["Items"][uid].material[0].depthTest = false;
-                    this.NamePlates["Items"][uid].material[0].depthWrite = false;
-                    this.NamePlates["Items"][uid].material[1].depthTest = false;
-                    this.NamePlates["Items"][uid].material[1].depthWrite = false;
+                text.outlineColor = "#000000";
+                text.outlineWidth = 0.010;
+                text.outlineBlur = 0.005;
+
+                text.position.x = itemstack.worldPos.x;
+                text.position.y = itemstack.worldPos.y + height;
+                text.position.z = itemstack.worldPos.z;
+                document.game.GRAPHICS.scene.threeScene.add(text);
+
+                text.sync(() => {
+                    text.renderOrder = 10000;
+                    text.material[0].depthTest = false;
+                    text.material[0].depthWrite = false;
+                    text.material[1].depthTest = false;
+                    text.material[1].depthWrite = false;
                 });
-            } else {
+            } else if (priority >= 0) {
                 // Update the Text with an x amount of items (number of ids associated with currItem)
                 if (Object.keys(currItem.ids).length > 1) {
-                    this.NamePlates["Items"][uid].text = currItem.name + " x" + Object.keys(currItem.ids).length;
+                    text.text = currItem.name + " x" + Object.keys(currItem.ids).length;
                 } else {
-                    this.NamePlates["Items"][uid].text = currItem.name;
+                    text.text = currItem.name;
                 }
+            } else if (text) {
+                // it exists, but priority <= means we deprioritized it
+                document.game.GRAPHICS.scene.threeScene.remove(text);
+                delete this.NamePlates["Items"][uid];
+                text.dispose();
             }
+
+            if (!text) {
+                // removed, or never added
+                continue;
+            }
+
+            let newColor = this.getItemColor(key);
+            if (text.color != newColor) {
+                text.color = newColor;
+            }
+
             // Update Scaling
             if (!this.scaleDistance) {
                 var scaleVector = new document.game.THREE.Vector3();
@@ -881,8 +917,6 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
             } else {
                 this.NamePlates["Items"][uid].scale.set(this.scaleFactor, this.scaleFactor, this.scaleFactor);
             }
-
-
 
             // Update Position
             this.NamePlates["Items"][uid].position.x = itemstack.worldPos.x;
@@ -955,8 +989,17 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
             (store) => {
                 store.openCursor(null, 'prev').onsuccess = (e) => {
                     const cursor = e.target.result;
+                    if (cursor === null) return;
                     let item = cursor.value;
-                    plugin.setPriority(item.itemId, item.value);
+                    switch (item.value) {
+                        case "high":
+                            plugin.upPriority(item.itemId);
+                            break;
+                        case "low":
+                            plugin.downPriority(item.itemId);
+                            break;
+                        default:
+                    }
                     cursor.continue();
                 };
             }
@@ -986,6 +1029,17 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
         );
     }
 
+    getItemColor(itemId: string) {
+        switch (this.itemPriorities[itemId]) {
+            case "high":
+                return "gold";
+            case "low":
+                return "gray";
+            default:
+                return "#ffffff";
+        }
+    }
+
     getPriority(itemId: string) {
         switch (this.itemPriorities[itemId]) {
             case "high":
@@ -997,7 +1051,10 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
         }
     }
 
-    upPriority(dom: HTMLElement, itemId: string) {
+    upPriority(itemId: string) {
+        let element = this.itemElements[itemId];
+        let dom = element["titleElement"] as HTMLElement;
+
         let name = document.game.DATA.items[itemId].name;
         if (dom.classList.contains("genlite-items-low-pri")) {
             dom.classList.remove("genlite-items-low-pri");
@@ -1010,7 +1067,10 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
         this.setPriority(itemId, "high");
     }
 
-    downPriority(dom: HTMLElement, itemId: string) {
+    downPriority(itemId: string) {
+        let element = this.itemElements[itemId];
+        let dom = element["titleElement"] as HTMLElement;
+
         let name = document.game.DATA.items[itemId].name;
         if (dom.classList.contains("genlite-items-high-pri")) {
             this.itemElements[itemId]["seo"] = name + ";" + "pri:normal;";
