@@ -66,8 +66,20 @@ export class GenLiteDropRecorderPlugin extends GenLitePlugin {
             
     async init() {
         document.genlite.registerPlugin(this);
+
+        let plugin = this;
         window.addEventListener('keydown', this.keyDownHandler.bind(this));
         window.addEventListener('keyup', this.keyUpHandler.bind(this));
+        window.addEventListener('focus', function() {
+            window.addEventListener('mousemove', function onmousemove(e) {
+                window.removeEventListener('mousemove', onmousemove, false);
+                if (e.altKey) {
+                    plugin.keyDownHandler(e);
+                } else {
+                    plugin.keyUpHandler(e);
+                }
+            });
+        });
 
         let dropTableString = localStorage.getItem("genliteDropTable");
         if (dropTableString == null) {
@@ -704,7 +716,7 @@ export class GenLiteDropRecorderPlugin extends GenLitePlugin {
     }
 
     keyDownHandler(event) {
-        if (event.key !== "Alt")
+        if (event.key !== "Alt" && !event.altKey)
             return;
 
         event.preventDefault();
@@ -718,7 +730,7 @@ export class GenLiteDropRecorderPlugin extends GenLitePlugin {
     }
 
     keyUpHandler(event) {
-        if (event.key !== "Alt")
+        if (event.key !== "Alt" && event.altKey)
             return;
 
         event.preventDefault();
