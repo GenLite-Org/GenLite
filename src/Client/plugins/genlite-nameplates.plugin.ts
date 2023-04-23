@@ -929,6 +929,23 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
         }
     }
 
+    async ItemStack_intersects(ray, list, itemstack) {
+        for (let entry of list) {
+            if (entry.text.startsWith('Take')) {
+                // itemId is not stored in the list entry, but theres a
+                // roundabout way of getting to it through an instance.
+                //
+                // TODO: can there be multiple item_info.ids with different
+                //       item ids? or empty ids?
+                const itemInfo = entry.object;
+                const inst = Object.keys(itemInfo.ids)[0];
+                const itemId = document.game.GAME.items[inst].item_keys[inst].item_id;
+                const priority = this.getPriority(itemId);
+                entry.priority += priority * 50;
+            }
+        }
+    }
+
     async Game_deleteItem(e: any) {
         if (this.NamePlates["Items"][e]) {
             document.game.GRAPHICS.scene.threeScene.remove(this.NamePlates["Items"][e]);
@@ -1043,11 +1060,11 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
     getPriority(itemId: string) {
         switch (this.itemPriorities[itemId]) {
             case "high":
-                return 2;
+                return 1;
             case "low":
                 return -1;
             default:
-                return 1;
+                return 0;
         }
     }
 
