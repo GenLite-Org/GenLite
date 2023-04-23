@@ -1011,7 +1011,7 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
         if (this.NamePlates["Items"][e]) {
             document.game.GRAPHICS.scene.threeScene.remove(this.NamePlates["Items"][e]);
             this.NamePlates["Items"][e].dispose();
-            delete this.NamePlates["Items"][e.uid];
+            delete this.NamePlates["Items"][e];
         }
     }
 
