@@ -965,6 +965,8 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
                 const priority = this.getPriority(itemId);
                 entry.priority += priority * 50;
                 items.push(itemId);
+
+                this.createItemRow(itemId, 0);
             }
         }
 
