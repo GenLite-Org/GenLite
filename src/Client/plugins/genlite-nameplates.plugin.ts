@@ -318,6 +318,20 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
                 this.createItemRow(item, 0);
             }
         }
+
+        this.sortItemList();
+    }
+
+    sortItemList() {
+        this.listContainer.innerHTML = '';
+        let sorted = Object.keys(this.itemElements).sort(
+            (a, b) => document.game.DATA.items[a].name.localeCompare(
+                document.game.DATA.items[b].name
+            )
+        );
+        for (const itemId of sorted) {
+            this.listContainer.appendChild(this.itemElements[itemId]);
+        }
     }
 
     createItemRow(itemId: string, count: number) {
@@ -967,6 +981,7 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
                 items.push(itemId);
 
                 this.createItemRow(itemId, 0);
+                this.sortItemList();
             }
         }
 
