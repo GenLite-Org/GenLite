@@ -230,6 +230,7 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
 
         let search = <HTMLInputElement>document.createElement("input");
         searchrow.appendChild(search);
+        search.id = "genlite-item-priority-search";
         search.classList.add("genlite-items-search");
         search.placeholder = "Search Items...";
         search.type = "text";
@@ -243,36 +244,46 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
         }
 
         search.oninput = function (e) {
-            let value = search.value.trim().toLowerCase();
-            let values = [];
-            for (const v of value.split(",")) {
-                values.push(v.trim());
+            let searches = []
+            let query = search.value.trim().toLowerCase();
+            for (const s of query.split("|")) {
+                let values = [];
+                for (const v of s.trim().split(",")) {
+                    values.push(v.trim());
+                }
+                searches.push(values);
             }
 
             let rows = document.getElementsByClassName("genlite-items-row");
             for (let i = 0; i < rows.length; i++) {
                 let row = rows[i] as HTMLElement;
                 let content = row["seo"].toLowerCase();
-                if (value === "") {
+                if (query === "") {
                     row.style.removeProperty("display");
                     continue;
                 }
 
                 let match = true;
-                for (let v of values) {
-                    let invert = v[0] === "-";
-                    if (invert) {
-                        v = v.substr(1);
+                for (let s of searches) {
+                    match = true;
+                    for (let v of s) {
+                        let invert = v[0] === "-";
+                        if (invert) {
+                            v = v.substr(1);
+                        }
+
+                        if (!invert && !content.includes(v)) {
+                            match = false;
+                            break;
+                        } else if (invert && content.includes(v)) {
+                            match = false;
+                            break;
+                        }
                     }
 
-                    if (!invert && !content.includes(v)) {
-                        match = false;
-                        break;
-                    } else if (invert && content.includes(v)) {
-                        match = false;
-                        break;
-                    }
+                    if (match) break;
                 }
+
                 if (match) {
                     row.style.removeProperty("display");
                 } else {
@@ -319,7 +330,7 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
         row.classList.add("genlite-items-row");
         this.listContainer.appendChild(row);
         this.itemElements[itemId] = row;
-        row["seo"] = name + ";" + "pri:normal;"
+        row["seo"] = name + ";id:" + itemId + ";pri:normal;"
 
         let icons = <HTMLElement>document.createElement("div");
         icons.classList.add("genlite-items-iconlist");
@@ -930,7 +941,18 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
     }
 
     async ItemStack_intersects(ray, list, itemstack) {
+        let n = ray.intersectObject(itemstack.mesh);
+        if (!n || n.length == 0 || list.length == 0) return;
+
+        let distance = 0;
+        let items = [];
+        let priorityOption = null;
+
         for (let entry of list) {
+            distance = entry.distance;
+            if (entry.text === 'Set Priorities') {
+                priorityOption = entry;
+            }
             if (entry.text.startsWith('Take')) {
                 // itemId is not stored in the list entry, but theres a
                 // roundabout way of getting to it through an instance.
@@ -942,7 +964,24 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
                 const itemId = document.game.GAME.items[inst].item_keys[inst].item_id;
                 const priority = this.getPriority(itemId);
                 entry.priority += priority * 50;
+                items.push(itemId);
             }
+        }
+
+        if (priorityOption === null) {
+            let obj = {
+                text: () => '',
+            };
+            list.push({
+                color: 'aqua',
+                distance: distance,
+                priority: -100,
+                object: obj,
+                text: 'Set Priorities',
+                action: () => document['GenLiteNamePlatesPlugin'].priorityEditor(items)
+            });
+        } else {
+            priorityOption.action = () => document['GenLiteNamePlatesPlugin'].priorityEditor(items);
         }
     }
 
@@ -1073,13 +1112,14 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
         let dom = element["titleElement"] as HTMLElement;
 
         let name = document.game.DATA.items[itemId].name;
+        element["seo"] = name + ";id:" + itemId + ";";
         if (dom.classList.contains("genlite-items-low-pri")) {
             dom.classList.remove("genlite-items-low-pri");
-            this.itemElements[itemId]["seo"] = name + ";" + "pri:normal;";
+            element["seo"] += "pri:normal;";
             this.setPriority(itemId, "normal");
             return;
         }
-        this.itemElements[itemId]["seo"] = name + ";" + "pri:high;";
+        element["seo"] += "pri:high;";
         dom.classList.add("genlite-items-high-pri");
         this.setPriority(itemId, "high");
     }
@@ -1089,14 +1129,34 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
         let dom = element["titleElement"] as HTMLElement;
 
         let name = document.game.DATA.items[itemId].name;
+        element["seo"] = name + ";id:" + itemId + ";";
         if (dom.classList.contains("genlite-items-high-pri")) {
-            this.itemElements[itemId]["seo"] = name + ";" + "pri:normal;";
+            element["seo"] += "pri:normal;";
             dom.classList.remove("genlite-items-high-pri");
             this.setPriority(itemId, "normal");
             return;
         }
-        this.itemElements[itemId]["seo"] = name + ";" + "pri:low;";
+        element["seo"] += "pri:low;";
         dom.classList.add("genlite-items-low-pri");
         this.setPriority(itemId, "low");
+    }
+
+    priorityEditor(itemIds: Array<string>) {
+        let ui = document['GenLiteUIPlugin'];
+
+        // TODO: this is hacky, and should be a ui plugin method
+        // if ui is closed, open it
+        if (ui.sidePanel.style.right === '-302px') {
+            let button = document.getElementById('genlite-ui-close-button');
+            button.dispatchEvent(new Event('click'));
+        }
+
+        setTimeout(function() {
+            ui.showTab('Item Priority');
+
+            let search = document.getElementById("genlite-item-priority-search") as HTMLInputElement;
+            search.value = 'id:' + itemIds.join(';|id:') + ';';
+            search.dispatchEvent(new Event('input'));
+        }, 100);
     }
 }
