@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2023 KKonaOG dpeGit
+    Copyright (C) 2023 KKonaOG dpeGit Retoxified
 */
 /*
     This file is part of GenLite.
@@ -831,13 +831,18 @@ export class GenLiteUIPlugin extends GenLitePlugin {
                 case 'range':
                     settings[setting].value = parseFloat(settings[setting].value);
                     break;
+                case 'button':
+                    settings[setting].value = settings[setting].value.toString();
+                    break;
                 default:
                     console.error(`Invalid setting type for ${setting} in ${plugin}`);
                     break;
             }
 
-            // Call the state handler for the setting
-            settings[setting].stateHandler(settings[setting].value);
+            // Call the state handler for the setting(skip buttons)
+            if(settings[setting].type !== 'button') {
+                settings[setting].stateHandler(settings[setting].value);
+            }
 
             // Create the setting input (based off the type, this changes)
             let settingInput;
@@ -1047,6 +1052,23 @@ export class GenLiteUIPlugin extends GenLitePlugin {
                         // Call the plugin state handler
                         settings[setting].stateHandler(settingInput.value);
                         this.setKey(plugin + "." + setting, settingInput.value);
+                    });
+                    break;
+                case 'button':
+                    settingInput = document.createElement('input');
+                    settingInput.type = 'button';
+                    settingInput.value = settings[setting].value;
+                    // Styling
+                    settingInput.style.backgroundColor = 'rgba(92, 92, 92, 0.75)';
+                    settingInput.style.border = '1px solid rgba(0, 0, 0, 1)';
+                    settingInput.style.borderRadius = '0px 0px 0px 0px';
+                    settingInput.style.color = 'white';
+                    settingInput.style.marginRight = '10px';
+
+                    // Add the event listener to the input
+                    settingInput.addEventListener('click', () => {
+                        // Call the plugin state handler
+                        settings[setting].stateHandler(settingInput.value);
                     });
                     break;
                 default:
