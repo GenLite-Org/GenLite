@@ -101,10 +101,7 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
         this.createUITab();
         this.pluginSettings = document.genlite.ui.registerPlugin("Name Plates", null, this.handlePluginState.bind(this), this.pluginSettings);
 
-        let plugin = this;
-        setTimeout(function() {
-            plugin.loadPrioritiesFromIDB();
-        }, 200);
+        this.loadPrioritiesFromIDB();
     }
 
     createCSS() {
