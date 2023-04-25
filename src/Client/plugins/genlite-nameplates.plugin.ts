@@ -101,10 +101,7 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
         this.createUITab();
         this.pluginSettings = document.genlite.ui.registerPlugin("Name Plates", null, this.handlePluginState.bind(this), this.pluginSettings);
 
-        let plugin = this;
-        setTimeout(function() {
-            plugin.loadPrioritiesFromIDB();
-        }, 200);
+        this.loadPrioritiesFromIDB();
     }
 
     createCSS() {
@@ -318,12 +315,26 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
                 this.createItemRow(item, 0);
             }
         }
+
+        this.sortItemList();
+    }
+
+    sortItemList() {
+        this.listContainer.innerHTML = '';
+        let sorted = Object.keys(this.itemElements).sort(
+            (a, b) => document.game.DATA.items[a].name.localeCompare(
+                document.game.DATA.items[b].name
+            )
+        );
+        for (const itemId of sorted) {
+            this.listContainer.appendChild(this.itemElements[itemId]);
+        }
     }
 
     createItemRow(itemId: string, count: number) {
         if (!document.game.DATA.items[itemId] || !!this.itemElements[itemId]) {
             // e.g. "nothing" or already added items
-            return;
+            return null;
         }
         let name = document.game.DATA.items[itemId].name;
         let row = <HTMLElement>document.createElement("div");
@@ -366,6 +377,7 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
         downArrow.onclick = function (e) {
             plugin.downPriority(itemId);
         };
+        return row;
     }
 
     createIconDiv(item) {
@@ -552,7 +564,8 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
 
     NPC_intersects(ray: any, list: any, NPC: any): void {
         // Only log if the number of elements in the list is greater than 1
-        if (list.length == 0) { return; }
+        if (list.length == 0) return;
+        if (!this.isPluginEnabled || !this.showNPCNames) return;
 
         // Create a Map to store the actions
         let NPCs = new Map();
@@ -941,6 +954,8 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
     }
 
     async ItemStack_intersects(ray, list, itemstack) {
+        if (!this.isPluginEnabled || !this.itemPrioritization) return;
+
         let n = ray.intersectObject(itemstack.mesh);
         if (!n || n.length == 0 || list.length == 0) return;
 
@@ -965,6 +980,10 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
                 const priority = this.getPriority(itemId);
                 entry.priority += priority * 50;
                 items.push(itemId);
+
+                if (this.createItemRow(itemId, 0) != null) {
+                    this.sortItemList();
+                }
             }
         }
 
@@ -989,7 +1008,7 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
         if (this.NamePlates["Items"][e]) {
             document.game.GRAPHICS.scene.threeScene.remove(this.NamePlates["Items"][e]);
             this.NamePlates["Items"][e].dispose();
-            delete this.NamePlates["Items"][e.uid];
+            delete this.NamePlates["Items"][e];
         }
     }
 
@@ -1086,6 +1105,7 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
     }
 
     getItemColor(itemId: string) {
+        if (!this.itemPrioritization) return "#ffffff";
         switch (this.itemPriorities[itemId]) {
             case "high":
                 return "gold";
@@ -1097,6 +1117,7 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
     }
 
     getPriority(itemId: string) {
+        if (!this.itemPrioritization) return 0;
         switch (this.itemPriorities[itemId]) {
             case "high":
                 return 1;
