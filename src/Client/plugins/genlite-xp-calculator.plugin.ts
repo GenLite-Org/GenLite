@@ -66,6 +66,18 @@ export class GenLiteXpCalculator extends GenLitePlugin {
 
     async init() {
         document.genlite.registerPlugin(this);
+
+        let plugin = this;
+        window.addEventListener('focus', function() {
+            window.addEventListener('mousemove', function onmousemove(e) {
+                window.removeEventListener('mousemove', onmousemove, false);
+                if (e.altKey) {
+                    plugin.canvasHolder.style.pointerEvents = "auto";
+                } else {
+                    plugin.canvasHolder.style.pointerEvents = "none";
+                }
+            });
+        });
     }
 
     async postInit() {
