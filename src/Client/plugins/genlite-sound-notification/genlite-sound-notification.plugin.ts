@@ -24,12 +24,12 @@ export class GenLiteSoundNotification extends GenLitePlugin {
     healthThreshold : number = 1;
 
     doInvCheck: boolean = false;
-    invThreshold : number = 1;
+    invThreshold: number = 1;
     prevSlotsUsed = null;
 
     overrideIGNVolume: boolean = false;
     initialIGNVolumeSet: boolean = true; // Sorry I know this is jank but I'm tired and couldn't think of a better way to do it
-    overrideVolume : number = 1;
+    overrideVolume: number = 1;
 
     genliteSoundListener;
     genliteSFXPlayer;
@@ -71,7 +71,7 @@ export class GenLiteSoundNotification extends GenLitePlugin {
             oldKey: "GenLite.InvCheck.Enable",
             value: this.doInvCheck,
             stateHandler: this.handleInvCheckEnableDisable.bind(this),
-            children : {
+            children: {
                 "Inventory Threshold": {
                     type: "range",
                     oldKey: "GenLite.InvThreshold.0",
@@ -125,8 +125,7 @@ export class GenLiteSoundNotification extends GenLitePlugin {
 
     handlePluginState(state: boolean): void {
         // TODO: Implement
-        // Display Yellow Console Message Stating the plugin needs to implement this
-        console.log(`%c[GenLite] %c${this.constructor.name} %cneeds to implement handlePluginState()`, "color: #ff0", "color: #fff", "color: #f00");
+        this.warn(`GenLiteSoundNotification needs to implement handlePluginState()`);
     }
 
     handleDoBoostDepletionCheck(state: boolean) {

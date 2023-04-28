@@ -39,12 +39,24 @@ export class GenLiteRecipeRecorderPlugin extends GenLitePlugin {
 
     session = null;
     sessionButton: HTMLElement = null;
+    itemList: Record<string, number> = {};
 
     async init() {
         document.genlite.registerPlugin(this);
+
+        let plugin = this;
         window.addEventListener('keydown', this.keyDownHandler.bind(this));
         window.addEventListener('keyup', this.keyUpHandler.bind(this));
-
+        window.addEventListener('focus', function() {
+            window.addEventListener('mousemove', function onmousemove(e) {
+                window.removeEventListener('mousemove', onmousemove, false);
+                if (e.altKey) {
+                    plugin.keyDownHandler(e);
+                } else {
+                    plugin.keyUpHandler(e);
+                }
+            });
+        });
         document.genlite.database.add((db) => {
             if (db.objectStoreNames.contains('recipesessions')) return;
             let store = db.createObjectStore('recipesessions', {
@@ -60,6 +72,21 @@ export class GenLiteRecipeRecorderPlugin extends GenLitePlugin {
             let saved = JSON.parse(dropTableString);
             this.recipeResults = saved.recipe ? saved.recipe : {};
             this.gatherResults = saved.gathering ? saved.gathering : {};
+            for (const key in this.recipeResults) {
+                for (const itemId in this.recipeResults[key].input) {
+                    this.itemList[itemId] = 0;
+                }
+                for (const itemId in this.recipeResults[key].output) {
+                    this.itemList[itemId] = 0;
+                }
+            }
+            for (const skill in this.gatherResults) {
+                for (const source in this.gatherResults[skill]) {
+                    for (const itemId in this.gatherResults[skill][source]) {
+                        this.itemList[itemId] = 0;
+                    }
+                }
+            }
         }
     }
 
@@ -385,7 +412,7 @@ export class GenLiteRecipeRecorderPlugin extends GenLitePlugin {
             }
 
             if (itemdata.border) {
-                let path = `items/placeholders/${ itemdata.border }_border.png`;
+                let path = `items/placeholders/${itemdata.border}_border.png`;
                 path = document.game.getStaticPath(path);
                 let qual = <HTMLImageElement>document.createElement("img");
                 qual.classList.add("new_ux-inventory_quality-image");
@@ -771,7 +798,7 @@ export class GenLiteRecipeRecorderPlugin extends GenLitePlugin {
         localStorage.setItem("GenliteRecipeRecorder", JSON.stringify({ recipe: this.recipeResults, gathering: this.gatherResults }));
     }
     keyDownHandler(event) {
-        if (event.key !== "Alt")
+        if (event.key !== "Alt" && !event.altKey)
             return;
 
         event.preventDefault();
@@ -785,7 +812,7 @@ export class GenLiteRecipeRecorderPlugin extends GenLitePlugin {
     }
 
     keyUpHandler(event) {
-        if (event.key !== "Alt")
+        if (event.key !== "Alt" && event.altKey)
             return;
 
         event.preventDefault();

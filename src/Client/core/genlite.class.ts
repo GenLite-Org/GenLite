@@ -32,6 +32,8 @@ export class GenLite {
     database: GenLiteDatabasePlugin;
     ui: GenLiteUIPlugin;
 
+    logged = false;
+
     /** We allow setting "any field, to anything" in order to load core features such as genlite.notifications */
     [key: string]: any;
 
@@ -44,15 +46,16 @@ export class GenLite {
         this.installHookNoProto('WORLDMANAGER', 'loadSegment')
         this.installHookNoProto('WORLDMANAGER', 'createSegment')
 
-        this.installHook('Network', 'logoutOK');
-        this.installHook('Network', 'disconnect', this.hookDisconnect)
+        this.installHook('Network', 'logoutOK', this.hookLogoutOK);
+        this.installHook('Network', 'disconnect', this.hookDisconnect);
         this.installHook('Network', 'action');
         this.installHook('Network', 'handle');
-        this.installHook('Camera', 'update');
         this.installHook('PlayerInfo', 'updateXP');
         this.installHook('PlayerInfo', 'updateTooltip');
         this.installHook('PlayerInfo', 'updateSkills');
         this.installHook('Game', 'combatUpdate');
+
+        this.installHook('Character', 'update');
         this.installHook('PlayerHUD', 'setHealth');
         this.installHook('Inventory', 'handleUpdatePacket');
         this.installHook('Inventory', '_getContextOptionsBank');
@@ -70,12 +73,22 @@ export class GenLite {
 
         this.installHook('Friends', 'getContextOptionsFriends');
         this.installHook('Friends', '_populateFriends');
+        this.hookInventoryContextMenu()
+
+
+        // Three.js Canvas Text Hooks
+        this.installHook('Camera', 'update');
+        this.installHook('Game', 'deleteNPC');
+        this.installHook('Game', 'deletePlayer');
+        this.installHook('Game', 'deleteItem');
+        this.installHook('ItemStack', 'update');
+        this.installHook('ItemStack', 'intersects');
+        this.installHook('NPC', 'update');
 
     }
 
     onUIInitialized() {
         this.hook('initializeUI');
-        this.hookInventoryContextMenu()
     }
 
 
@@ -92,17 +105,25 @@ export class GenLite {
     }
 
     hookPhased(fnName: string, ...args: Array<unknown>) {
-        if (args[0] === "game_loaded") {
+        if (args[0] === "game_loaded" && !this.logged) {
             this.hook('loginOK', args);
+            this.logged = true;
+
 
             if (!this.ui.hasInitialized) {
+                this.onUIInitialized();
                 this.pluginLoader.postInit();
+
             }
         }
     }
 
-    hookDisconnect(fnName: string, ...args: Array<unknown>) {
+    hookLogoutOK(fnName: string, ...args: Array<unknown>) {
+        this.logged = false;
         this.hook('Network_logoutOK', args);
+    }
+    hookDisconnect(fnName: string, ...args: Array<unknown>) {
+        this.hookLogoutOK(fnName, ...args);
     }
 
     /* override the client's function referance after hooking */
