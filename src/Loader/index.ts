@@ -29,7 +29,7 @@ let genliteUpdateTimestampDate = new Date(genliteUpdateTimestamp);
 let genfanadUpdateTimestamp = localStorage.getItem('GenFanad.UpdateTimestamp');
 if (genfanadUpdateTimestamp == null) {
     // If it doesn't exist, then create it
-    localStorage.setItem('GenLite.UpdateTimestamp', new Date(0).toString());
+    localStorage.setItem('GenFanad.UpdateTimestamp', new Date(0).toString());
 
     // And set the timestamp to 05
     genfanadUpdateTimestamp = localStorage.getItem('GenFanad.UpdateTimestamp');
@@ -90,38 +90,36 @@ if (genliteModifiedDate == null || genliteModifiedDate == undefined) {
 
 // Genfanad Client is always updated
 let genfanadJS = localStorage.getItem('GenFanad.Client');
-if (genfanadLastModified.getTime() > genfanadUpdateTimestampDate.getTime()) {
-    let xhrClientJS = new XMLHttpRequest();
-    xhrClientJS.open("GET", "https://play.genfanad.com/play/js/client.js");
-    xhrClientJS.onload = function () {
-        if (xhrClientJS.status == 200) {
-            genfanadJS = xhrClientJS.responseText;
-            // Implement Work-Arounds for Closure
-            genfanadJS = genfanadJS.replace(
-                /import.meta.url/g,
-                '("https://play.genfanad.com/play/js/client.js")'
-            );
-            genfanadJS = genfanadJS.substring(0, genfanadJS.length - 5)
-                + "; document.client = {};"
-                + "document.client.get = function(a) {"
-                + "return eval(a);"
-                + "};"
-                + "document.client.set = function(a, b) {"
-                + "eval(a + ' = ' + b);"
-                + "};"
-                + genfanadJS.substring(genfanadJS.length - 5)
-                + "//# sourceURL=client.js";
+let xhrClientJS = new XMLHttpRequest();
+xhrClientJS.open("GET", "https://play.genfanad.com/play/js/client.js");
+xhrClientJS.onload = function () {
+    if (xhrClientJS.status == 200) {
+        genfanadJS = xhrClientJS.responseText;
+        // Implement Work-Arounds for Closure
+        genfanadJS = genfanadJS.replace(
+            /import.meta.url/g,
+            '("https://play.genfanad.com/play/js/client.js")'
+        );
+        genfanadJS = genfanadJS.substring(0, genfanadJS.length - 5)
+            + "; document.client = {};"
+            + "document.client.get = function(a) {"
+            + "return eval(a);"
+            + "};"
+            + "document.client.set = function(a, b) {"
+            + "eval(a + ' = ' + b);"
+            + "};"
+            + genfanadJS.substring(genfanadJS.length - 5)
+            + "//# sourceURL=client.js";
 
-            localStorage.setItem('GenFanad.Client', genfanadJS);
+        localStorage.setItem('GenFanad.Client', genfanadJS);
 
 
-        } else {
-            console.error("GenFanad Client.js failed to load. Status: " + xhrClientJS.status);
-        }
-        localStorage.setItem('GenFanad.UpdateTimestamp', genfanadLastModified.toString());
+    } else {
+        console.error("GenFanad Client.js failed to load. Status: " + xhrClientJS.status);
     }
-    xhrClientJS.send();
+    localStorage.setItem('GenFanad.UpdateTimestamp', genfanadLastModified.toString());
 }
+xhrClientJS.send();
 
 const needsUpdate = genliteLastModified > genliteUpdateTimestampDate;
 
