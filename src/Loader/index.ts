@@ -41,7 +41,7 @@ let genliteUpdateTimestampDate = new Date(genliteUpdateTimestamp);
 let genfanadUpdateTimestamp = localStorage.getItem('GenFanad.UpdateTimestamp');
 if (genfanadUpdateTimestamp == null) {
     // If it doesn't exist, then create it
-    localStorage.setItem('GenLite.UpdateTimestamp', new Date(0).toString());
+    localStorage.setItem('GenFanad.UpdateTimestamp', new Date(0).toString());
 
     // And set the timestamp to 05
     genfanadUpdateTimestamp = localStorage.getItem('GenFanad.UpdateTimestamp');
