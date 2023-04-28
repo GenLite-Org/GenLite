@@ -40,7 +40,6 @@ export class GenLiteDropRecorderPlugin extends GenLitePlugin {
 
     /* key for dropTable -> Monster_Name-Monster_Level */
     dropTable = {};
-    itemList: Record<string, number> = {};
 
     packList;
 
@@ -66,20 +65,8 @@ export class GenLiteDropRecorderPlugin extends GenLitePlugin {
             
     async init() {
         document.genlite.registerPlugin(this);
-
-        let plugin = this;
         window.addEventListener('keydown', this.keyDownHandler.bind(this));
         window.addEventListener('keyup', this.keyUpHandler.bind(this));
-        window.addEventListener('focus', function() {
-            window.addEventListener('mousemove', function onmousemove(e) {
-                window.removeEventListener('mousemove', onmousemove, false);
-                if (e.altKey) {
-                    plugin.keyDownHandler(e);
-                } else {
-                    plugin.keyUpHandler(e);
-                }
-            });
-        });
 
         let dropTableString = localStorage.getItem("genliteDropTable");
         if (dropTableString == null) {
@@ -90,13 +77,6 @@ export class GenLiteDropRecorderPlugin extends GenLitePlugin {
         for(let key in this.dropTable){
             if(this.dropTable[key].location)
                 delete (this.dropTable[key].location);
-        }
-
-        let itemListString = localStorage.getItem("genliteItemList");
-        if (itemListString === null) {
-            this.rebuildItemList();
-        } else {
-            this.itemList = JSON.parse(itemListString);
         }
     }
 
@@ -176,7 +156,7 @@ export class GenLiteDropRecorderPlugin extends GenLitePlugin {
             .genlite-drops-iconlist {
                 display: flex;
                 column-gap: 0.5em;
-                padding: 1em;
+                padding: 0.25em;
                 overflow-x: hidden;
             }
 
@@ -693,8 +673,6 @@ export class GenLiteDropRecorderPlugin extends GenLitePlugin {
                 this.dropTable[dropKey].drops[drop.Item_Code] = 0;
             this.dropTable[dropKey].drops[drop.Item_Code] += drop.Item_Quantity;
             localStorage.setItem("genliteDropTable", JSON.stringify(this.dropTable));
-
-            this.addToItemList(drop.Item_Code, drop.Item_Quantity);
         }
         this.updateMonsterRow(dropKey);
     }
@@ -716,7 +694,7 @@ export class GenLiteDropRecorderPlugin extends GenLitePlugin {
     }
 
     keyDownHandler(event) {
-        if (event.key !== "Alt" && !event.altKey)
+        if (event.key !== "Alt")
             return;
 
         event.preventDefault();
@@ -730,7 +708,7 @@ export class GenLiteDropRecorderPlugin extends GenLitePlugin {
     }
 
     keyUpHandler(event) {
-        if (event.key !== "Alt" && event.altKey)
+        if (event.key !== "Alt")
             return;
 
         event.preventDefault();
@@ -739,27 +717,5 @@ export class GenLiteDropRecorderPlugin extends GenLitePlugin {
             let el = eles[i] as HTMLElement;
             el.style.removeProperty('display');
         }
-    }
-
-    rebuildItemList() {
-        this.itemList = {};
-        for (const monsterId in this.dropTable) {
-            if (!this.dropTable[monsterId].drops) continue
-            for (const item in this.dropTable[monsterId].drops) {
-                this.addToItemList(item, this.dropTable[monsterId].drops[item]);
-            }
-        }
-        // TODO(IDB)
-        // localStorage.setItem("genliteItemList", JSON.stringify(this.itemList));
-    }
-
-    addToItemList(item: string, count: number) {
-        if (this.itemList[item] === undefined) {
-            this.itemList[item] = count;
-        } else {
-            this.itemList[item] += count;
-        }
-        // TODO(IDB)
-        // localStorage.setItem("genliteItemList", JSON.stringify(this.itemList));
     }
 }

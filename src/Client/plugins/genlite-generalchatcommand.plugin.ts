@@ -38,7 +38,8 @@ export class GenLiteGeneralChatCommands extends GenLitePlugin {
 
     handlePluginState(state: boolean): void {
         // TODO: Implement
-        this.warn(`GenLiteGeneralChatCommands needs to implement handlePluginState()`);
+        // Display Yellow Console Message Stating the plugin needs to implement this
+        console.log(`%c[GenLite] %c${this.constructor.name} %cneeds to implement handlePluginState()`, "color: #ff0", "color: #fff", "color: #f00");
     }
 
     loginOK() {

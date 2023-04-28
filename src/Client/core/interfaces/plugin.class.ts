@@ -24,6 +24,7 @@ export abstract class GenLitePlugin {
     PlayerInfo_updateXP?(xp: object): void; // TODO: provide proper type
     PlayerInfo_updateTooltip?(): void;
     PlayerInfo_updateSkills?(): void;
+    Game_combatUpdate?(update: any): void;
     PlayerHUD_setHealth?(current: number, max: number): void;
     Inventory_handleUpdatePacket?(packet: any): void;
     Bank_handlePacket?(packet: any): void;
@@ -31,27 +32,13 @@ export abstract class GenLitePlugin {
     Bank__addContextOptionsActual?(item: object, contextMenu: contextMenu[], n: any): void;
     Bank__addContextOptions?(itemSlot: number, contextMenu: contextMenu[]): void;
     Trade_handlePacket?(packet: any): void;
-    NPC_intersects?(ray: any, list: any, test: any): void;
+    NPC_intersects?(ray: any, list: any): void;
     OptimizedScene_intersects?(ray: any, list: any): void;
     Inventory__getAllContextOptions?(itemID, itemActions): void;
     Inventory__getContextOptionsBank?(slotId: number, invBankObject: invBankObject, contextMenu: contextMenu[]): void;
     WORLDMANAGER_loadSegment?(segmentData: SegmentKey, segmentKey: string, onComplete: () => void): void;
     WORLDMANAGER_createSegment?(segmentData: SegmentKey, segmentObjects: object): void;
     Segment_load?(segmentObjects: object, thisSegment: Segment): void;
-
-
-
-    // Calls used in New Canvas Code
-    Game_combatUpdate?(update: any): void;
-    Game_createNPC?(e: any, t: any): void;
-    Game_deleteNPC?(npcID: any, npc: any): void;
-    Game_createPlayer?(e: any, t: any): void;
-    Game_deletePlayer?(playerID: any, player: any): void;
-    Game_deleteItem?(e: any, t: any): void;
-    Character_update?(camera: any, dt: any, character: any): Promise<void>;
-    ItemStack_update?(camera: any, dt: any, itemstack: any): Promise<void>;
-    NPC_update?(camera: any, dt: any, npc: any): Promise<void>;
-
 
     log(...args): void {
         if (process.env.NODE_ENV === 'production')
