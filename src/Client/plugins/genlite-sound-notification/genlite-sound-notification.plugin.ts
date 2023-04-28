@@ -24,12 +24,12 @@ export class GenLiteSoundNotification extends GenLitePlugin {
     healthThreshold : number = 1;
 
     doInvCheck: boolean = false;
-    invThreshold : number = 1;
+    invThreshold: number = 1;
     prevSlotsUsed = null;
 
     overrideIGNVolume: boolean = false;
     initialIGNVolumeSet: boolean = true; // Sorry I know this is jank but I'm tired and couldn't think of a better way to do it
-    overrideVolume : number = 1;
+    overrideVolume: number = 1;
 
     genliteSoundListener;
     genliteSFXPlayer;
@@ -71,7 +71,7 @@ export class GenLiteSoundNotification extends GenLitePlugin {
             oldKey: "GenLite.InvCheck.Enable",
             value: this.doInvCheck,
             stateHandler: this.handleInvCheckEnableDisable.bind(this),
-            children : {
+            children: {
                 "Inventory Threshold": {
                     type: "range",
                     oldKey: "GenLite.InvThreshold.0",

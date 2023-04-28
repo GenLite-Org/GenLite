@@ -42,7 +42,7 @@ export class GenLiteRecipeRecorderPlugin extends GenLitePlugin {
         window.addEventListener('keyup', this.keyUpHandler.bind(this));
 
 
-        let dropTableString = localStorage.getItem("GenliteRecipeRecorder")
+        let dropTableString = localStorage.getItem("GenliteRecipeRecorder");
         if (dropTableString == null) {
             this.recipeResults = {};
             this.gatherResults = {};
@@ -326,7 +326,7 @@ export class GenLiteRecipeRecorderPlugin extends GenLitePlugin {
             }
 
             if (itemdata.border) {
-                let path = `items/placeholders/${ itemdata.border }_border.png`;
+                let path = `items/placeholders/${itemdata.border}_border.png`;
                 path = document.game.getStaticPath(path);
                 let qual = <HTMLImageElement>document.createElement("img");
                 qual.classList.add("new_ux-inventory_quality-image");

@@ -26,7 +26,7 @@ export class GenLiteGeneralChatCommands extends GenLitePlugin {
     async init() {
         document.genlite.registerPlugin(this);
 
-        let playedString = localStorage.getItem("genlitePlayed")
+        let playedString = localStorage.getItem("genlitePlayed");
         if (playedString == null) {
             this.playedTime = 0;
         } else {

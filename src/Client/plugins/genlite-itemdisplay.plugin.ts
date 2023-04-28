@@ -70,7 +70,7 @@ export class GenLiteItemDisplays extends GenLitePlugin {
             let span = document.createElement('span');
             div.appendChild(span);
             span.classList.add("new_ux-item-quantity-span");
-            span.classList.add("genlite_item_extras")
+            span.classList.add("genlite_item_extras");
             span.innerHTML = "samual smells";
             /* code reuse compatibility */
             if (slot.item_div)
@@ -104,8 +104,8 @@ export class GenLiteItemDisplays extends GenLitePlugin {
     Trade_handlePacket(payload) {
         if (!this.isPluginEnabled)
             return;
-        this.itemExtraUpdate(payload[0].contents.myOffer, document.game.TRADE.DOM_your_slots);
-        this.itemExtraUpdate(payload[0].contents.theirOffer, document.game.TRADE.DOM_their_slots);
+        this.itemExtraUpdate(payload.contents.myOffer, document.game.TRADE.DOM_your_slots);
+        this.itemExtraUpdate(payload.contents.theirOffer, document.game.TRADE.DOM_their_slots);
     }
 
     itemExtraUpdate(slots, doms) {

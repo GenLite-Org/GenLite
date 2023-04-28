@@ -70,9 +70,112 @@ const DISCLAIMER = [
 
 let isInitialized = false;
 
+/* GenLite Startup order with the format FILENAME: functName() followed by a description of what its doing, when, and how many times 
+index.ts: load()
+    - entry point for everything
+    - interupts genfanad client from running so we can hook in to it
+    - contains firefox compatibility code
+    + runs once per page load
+index.ts: window.addEventListener('load'...)
+    - checks for the GenLite disclaimer then calls hookStartScene()
+    + runs once per page load
+    index.ts: hookStartScene()
+        - hooks the Original StartScene() function from genfanad client
+        + runs once per page load
+document.client.qS (the StartSceneFunction)
+    - runs the the Genfanad's StartScene()
+    - execution of further init is now blocked untill user presses the login button
+-+-+-+-+-+ GENFANAD STARTED HERE -+-+-+-+-+
+    - waits 100ms then run initGenLite()
+    + runs every time the login button is pressed
+******* Everything above this point should only be touched if modifying the GenfanadJS capture process ********
+
+index.ts: initGenLite()
+-+-+-+-+-+ GENFANAD GAME OBJECTS ASSIGNED HERE -+-+-+-+-+
+    - calls initGameObjects()
+    index.ts: initGameObjects()
+        - assigns the minified names from the Genfanad Client to human friendly names
+        + runs once every time the login button is pressed
+    + will return form here if isInitialized is set to true
+-+-+-+-+-+ GENLITE INIT HERE -+-+-+-+-+
+    - calls addPlugins()
+    index.ts: addPlugins()
+        - creates a new GenLite object
+        genlite.class.ts: constructor()
+            - creates a new GenLitePluginLoader and assigns it to genlite.pluginLoader
+            + runs once per page load
+        - sets it at document.genlite
+        - calls genlite.init()
+-+-+-+-+-+ GENLITE HOOKS INSTALLED HERE -+-+-+-+-+
+        genlite.class.ts: init()
+            - installs the hooks for the various functions
+            + runs once per page load
+-+-+-+-+-+ GENLITE PLUGINS LOADED HERE -+-+-+-+-+
+        - core plugins are loaded
+        - core plugins are assined under genlite.coreName
+        - standard plugins are loaded
+        genlite-plugin-loader.class.ts: addPlugin(GenLitePlugin)
+            - checks that plugins have the right structure
+-+-+-+-+-+ PLUGIN CONSTRUCTOR CALLED HERE -+-+-+-+-+
+            - creates a new instance of the class calling their constructor
+-+-+-+-+-+ PLUGIN INIT CALLED HERE -+-+-+-+-+
+            - calls GenLitePlugin.init()
+            - sets plugin under document.pluginName
+            - stores plugin instance in genlite.pluginoader.plugins
+            - runs once per page load per plugin being loaded
+        + runs once per page load
+    - set isInitalized to true
+    + runs everytime login button is pressed but only runs initGameObjects() after the first login
+
+genlite.class.ts: hookPhased
+    - at this point we are now waiting for Genfanad to finish the login process
+    - when PHASED_LOADING_MANAGER reaches game_loaded we
+-+-+-+-+-+ PLUGIN LOGIN OK CALLED HERE -+-+-+-+-+
+    + call loginOK if we are currently logged out (at login screen due to page load, logout, or disconnect)
+-+-+-+-+-+ PLUGIN INITALIZEUI CALLED HERE -+-+-+-+-+
+    - if ui has not been inited yet call genlite.onUIInitialized()
+    genlite.class.ts: onUIInitialized()
+        - calls plugins initializeUI()
+        + runs once per page load
+-+-+-+-+-+ PLUGIN POST INIT CALLED HERE -+-+-+-+-+
+    - if ui has not been inited yet call pluginLoader.postInit()
+    genlite-plugin-loader: postInit()
+        - calls postInit() on each plugin
+        + runs once per page load
+
+
+
+TLDR - general order
+
+Page Load
+Intercept Genfanad
+Pre Init (currently not needed and unimplimented)
+Hook StartScene()
+------------ above is once per page load ------------
+Wait for login button press
+OriginalStartScene - every login
+initGameObjects() - every login
+Init GenLite Object - once per page load
+Install Hooks - once per page load
+Init CorePlugins - once per page load
+Init StandardPlugins - once per page load
+LoginOK - every login
+initalizeUI() - once per page load
+Post Init Plugins - once per page load
+
+*/
+
 (async function load() {
     async function initGenLite() {
+        initGameObjects();
+        if (!isInitialized)
+            addPlugins();
+        isInitialized = true;
+        return;
 
+    }
+
+    function initGameObjects() {
         function gameObject(
             name: string,
             minified: string,
@@ -89,6 +192,18 @@ let isInitialized = false;
             parent[name] = o;
         }
 
+        /* KEYBOARD is redefined everytime the get gets focus
+    so we set a second listener with a small timeout that sets out variable just after genfanads
+    this feels really fucking hacky though
+*/
+        function hookKeyboard() {
+            window.addEventListener("focus", (e) => {
+                setTimeout(() => {
+                    document.game.KEYBOARD = document.client.get('ZS');
+                }, 10);
+            });
+        }
+
         document.game = {};
         document.game.ITEM_RIGHTCLICK_LIMIT = 20; // TODO: Is this equivalent? It seems to no longer be included in client.js
 
@@ -98,13 +213,13 @@ let isInitialized = false;
         gameObject('Chat', 'rv');
         gameObject('Actor', 'Dg');
         gameObject('Animation', 'h_');
-        gameObject('Camera', 'DS');
+        gameObject('Camera', 'PS');
         gameObject('Character', 'A_');
         gameObject('DeduplicatingCachedLoader', 'wS');
         gameObject('FadeAnimation', 'd_');
         gameObject('FrozenEffect', 'Gg');
         gameObject('Game', 'X_');
-        gameObject('Graphics', 'NS');
+        gameObject('Graphics', 'BS');
         gameObject('HumanCharacter', 'jg');
         gameObject('ItemStack', 'Lg');
         gameObject('MinimapRenderer', 'j_');
@@ -112,7 +227,7 @@ let isInitialized = false;
         gameObject('MonsterCharacter', 'Hg');
         gameObject('Network', 'ug');
         gameObject('NewSegmentLoader', 'yS');
-        gameObject('OptimizedScene', 'PS');
+        gameObject('OptimizedScene', 'NS');
         gameObject('PassThroughSpineTexture', 'Pg');
         gameObject('Player', 'O_');
         gameObject('Seed', 'z_');
@@ -122,48 +237,46 @@ let isInitialized = false;
         gameObject('SpriteProjectileAnimation', 'f_');
         gameObject('TeleportAnimation', 'u_');
         gameObject('TemporaryScenery', 'H_');
-        gameObject('WorldManager', 'IS');
+        gameObject('WorldManager', 'LS');
         gameObject('WorldObject', 'E_');
         gameObject('Math', 'xi', document.game.THREE);
         gameObject('SFXPlayer', '$m');
-        gameObject('PlayerHUD', 'zv');
+        gameObject('PlayerHUD', 'Ov');
         gameObject('PlayerInfo', 'Xg');
-        gameObject('Inventory', 'Cv');
-        gameObject('PhasedLoadingManager', 'gS');
-        gameObject('Trade', 'Hv');
+        gameObject('Inventory', 'zv');
+        gameObject('PhasedLoadingManager', 'vS');
+        gameObject('Trade', 'Gv');
         gameObject('Friends', 'G_');
-        gameObject('PlayerHUD', 'zv');
         gameObject('Shop', 'jv');
 
 
         // Objects
-        gameObject('BANK', 'ew');
-        gameObject('CHAT', 'nw');
-        gameObject('DATA', 'Qy');
-        gameObject('FRIENDS', 'dw');
+        gameObject('BANK', 'tw');
+        gameObject('CHAT', 'iw');
+        gameObject('DATA', 'eS');
+        gameObject('FRIENDS', 'uw');
         gameObject('GAME', 'K_.game');
-        gameObject('GRAPHICS', 'KS.graphics');
-        gameObject('INVENTORY', 'uw');
+        gameObject('GRAPHICS', '$S.graphics');
+        gameObject('INVENTORY', 'pw');
         gameObject('NETWORK', 'pg.network');
-        gameObject('PHASEDLOADINGMANAGER', 'gS');
-        gameObject('PLAYER', '$S.player');
+        gameObject('PHASEDLOADINGMANAGER', 'vS');
+        gameObject('PLAYER', 'JS.player');
         gameObject('SFX_PLAYER', 'Jm');
-        gameObject('WORLDMANAGER', 'IS');
-        gameObject('MUSIC_PLAYER', 'Nv');
-        gameObject('MUSIC_TRACK_NAMES', 'Pv');
-        gameObject('SETTINGS', 'bw');
+        gameObject('WORLDMANAGER', 'LS');
+        gameObject('MUSIC_PLAYER', 'Bv');
+        gameObject('MUSIC_TRACK_NAMES', 'Nv');
+        gameObject('SETTINGS', 'yw');
         gameObject('THREE', 'e');
-        gameObject('PLAYER_INFO', 'fw');
-        gameObject('PLAYER_HUD', '_w');
+        gameObject('PLAYER_INFO', 'gw');
+        gameObject('PLAYER_HUD', 'fw');
         gameObject('NPC', 'I_');
-        gameObject('TRADE', 'Mw');
+        gameObject('TRADE', 'Tw');
         gameObject('NETWORK_CONTAINER', 'mg');
-        gameObject('FRIENDS', 'dw');
-        gameObject('SHOP', 'yw');
+        gameObject('SHOP', 'Sw');
 
         /* Special Case Objects */
         /* have to do this here because keyboard is constantly redefined */
-        gameObject('KEYBOARD', 'XS');
+        gameObject('KEYBOARD', 'ZS');
         hookKeyboard();
 
         //Functions
@@ -175,11 +288,11 @@ let isInitialized = false;
         //Constants
         gameObject('SOME_CONST_USED_FOR_BANK', 'P');
 
-        if (isInitialized) {
-            document.genlite.onUIInitialized();
-            return;
-        }
-        isInitialized = true;
+
+    }
+
+    async function addPlugins() {
+
 
         const genlite = new GenLite();
         document.genlite = genlite;
@@ -191,6 +304,8 @@ let isInitialized = false;
         genlite.commands = await genlite.pluginLoader.addPlugin(GenLiteCommandsPlugin);
         genlite.database = await genlite.pluginLoader.addPlugin(GenLiteDatabasePlugin);
         genlite.ui = await genlite.pluginLoader.addPlugin(GenLiteUIPlugin);
+
+
 
         /** Official Plugins */
         await genlite.pluginLoader.addPlugin(GenLiteCameraPlugin);
@@ -219,11 +334,8 @@ let isInitialized = false;
         await genlite.pluginLoader.addPlugin(GenLiteTaggingPlugin);
         await genlite.pluginLoader.addPlugin(GenliteSimplifiedChatUiPlugin);
 
-        /** post init things */
-        // await document['GenLiteDatabasePlugin'].postInit();
-        // await document['GenLiteSettingsPlugin'].postInit();
-        // await document['GenLiteNPCHighlightPlugin'].postInit();
-        // await document['GenLiteDropRecorderPlugin'].postInit();
+
+
 
         // NOTE: currently initGenlite is called after the scene has started
         //       (in minified function qS). The initializeUI function does not
@@ -236,33 +348,20 @@ let isInitialized = false;
         // NOTE 2: This is now also used to call postInit on plugins through GenLitePluginLoader
         //         The GenLiteUIPlugin.registerPlugin function requires being present in the postInit for a function
         //         as it calls various things involving settings that may not be ready until after init.
-        genlite.onUIInitialized();
     }
-
+    
     function hookStartScene() {
-        if (localStorage.getItem("GenLiteConfirms") === "true") {
-            let doc = (document as any);
-            doc.client.set('document.client.originalStartScene', doc.client.get('qS'));
-            doc.client.set('qS', function () {
-                document.client.originalStartScene();
-                setTimeout(document.initGenLite, 100);
-            });
-        }
-    }
 
-    /* KEYBOARD is redefined everytime the get gets focus
-        so we set a second listener with a small timeout that sets out variable just after genfanads
-        this feels really fucking hacky though
-    */
-    function hookKeyboard() {
-        window.addEventListener("focus", (e) => {
-            setTimeout(() => {
-                document.game.KEYBOARD = document.client.get('XS');
-            }, 10);
+        let doc = (document as any);
+        doc.client.set('document.client.originalStartScene', doc.client.get('WS'));
+        doc.client.set('WS', function () {
+            document.client.originalStartScene();
+            setTimeout(document.initGenLite, 100);
         });
     }
 
     window.addEventListener('load', (e) => {
+
         document.initGenLite = initGenLite;
 
         let confirmed = localStorage.getItem("GenLiteConfirms");
@@ -288,20 +387,20 @@ let isInitialized = false;
             (document.head || document.documentElement).appendChild(script);
         }
     }
-    
+
     let genfanadJS = localStorage.getItem("GenFanad.Client");
     if (!genfanadJS) {
         console.error("GenFanad.Client not found in localStorage. GenLite will not work.");
     } else {
         genfanadJS = genfanadJS.replace(/window\.innerWidth/g, "document.body.clientWidth");
         genfanadJS = genfanadJS.replace(/background-image: linear-gradient\(var\(--yellow-3\), var\(--yellow-3\)\);/g, "");
-        
+
         // if (document.head) {
         //     throw new Error('Head already exists - make sure to enable instant script injection');
         // }
-        
+
         const isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
-        
+
         if (isFirefox) {
             document.addEventListener("beforescriptexecute", firefoxOverride, true);
         } else {

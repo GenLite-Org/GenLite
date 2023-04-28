@@ -71,7 +71,7 @@ export class GenLiteItemHighlightPlugin extends GenLitePlugin {
     isPluginEnabled: boolean = false;
     hideLables: boolean = false;
 
-    pluginSettings : Settings = {
+    pluginSettings: Settings = {
         "Show Item Labels": {
             type: "checkbox",
             oldKey: "GenLite.HideItemLabels.Enable",
@@ -119,7 +119,7 @@ export class GenLiteItemHighlightPlugin extends GenLitePlugin {
     }
 
     loadItemList() {
-        let storedItemData = localStorage.getItem("genliteItemData")
+        let storedItemData = localStorage.getItem("genliteItemData");
         if (storedItemData !== null) {
             this.itemData = JSON.parse(storedItemData);
         }
