@@ -16,7 +16,7 @@ import { GenLitePlugin } from '../core/interfaces/plugin.class';
 export class GenLiteEnhancedContextMenu extends GenLitePlugin {
     static pluginName = 'GenLiteEnhancedContextMenu';
 
-    wikiBaseURL: string = "https://genfanad.fandom.com/wiki/";
+    wikiBaseURL: string = "https://genfanad.info/wiki/";
     isEnabled: boolean = false;
 
     hideStairs: boolean = false;
