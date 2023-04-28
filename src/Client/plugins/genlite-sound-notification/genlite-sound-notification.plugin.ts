@@ -11,12 +11,16 @@
     You should have received a copy of the GNU General Public License along with Foobar. If not, see <https://www.gnu.org/licenses/>.
 */
 
-import {GenLitePlugin} from '../core/interfaces/plugin.class';
+import {GenLitePlugin} from '../../core/interfaces/plugin.class';
+import { BoostDepletion } from './BoostDepletion.class';
+import { HealthRegeneration } from './HealthRegeneration.class';
 
 export class GenLiteSoundNotification extends GenLitePlugin {
     static pluginName = 'GenLiteSoundNotification';
 
     doHealthCheck: boolean = false;
+    doBoostCheck: boolean = false;
+    doHealthRegenerationCheck: boolean = false;
     healthThreshold : number = 1;
 
     doInvCheck: boolean = false;
@@ -31,10 +35,12 @@ export class GenLiteSoundNotification extends GenLitePlugin {
     genliteSFXPlayer;
     playerInUse;
 
+    boostDepletion: BoostDepletion = new BoostDepletion();
+    healthRegeneration: HealthRegeneration = new HealthRegeneration();
 
     // Plugin Settings
     pluginSettings : Settings = {
-        "Low Health Sound": {
+        "Low Health": {
             type: "checkbox",
             oldKey: "GenLite.LowHealthSound.Enable",
             value: this.doHealthCheck,
@@ -50,7 +56,17 @@ export class GenLiteSoundNotification extends GenLitePlugin {
                 }
             }
         },
-        "Inventory Space Sound": {
+        "Boost Depletion": {
+            type: "checkbox",
+            value: this.doBoostCheck,
+            stateHandler: this.handleDoBoostDepletionCheck.bind(this),
+        },
+        "Health Regeneration": {
+            type: "checkbox",
+            value: this.doHealthRegenerationCheck,
+            stateHandler: this.handleDoHealthRegenerationCheck.bind(this),
+        },
+        "Inventory Space": {
             type: "checkbox",
             oldKey: "GenLite.InvCheck.Enable",
             value: this.doInvCheck,
@@ -99,6 +115,8 @@ export class GenLiteSoundNotification extends GenLitePlugin {
         if (this.overrideVolume)
             this.playerInUse = this.genliteSFXPlayer;
 
+        this.boostDepletion.init();
+        this.healthRegeneration.init();
     }
 
     async postInit() {
@@ -108,6 +126,26 @@ export class GenLiteSoundNotification extends GenLitePlugin {
     handlePluginState(state: boolean): void {
         // TODO: Implement
         this.warn(`GenLiteSoundNotification needs to implement handlePluginState()`);
+    }
+
+    handleDoBoostDepletionCheck(state: boolean) {
+      if (state) {
+        this.boostDepletion.enable();
+      } else {
+        this.boostDepletion.disable();
+      }
+
+      this.doBoostCheck = state;
+    }
+
+    handleDoHealthRegenerationCheck(state: boolean) {
+      if (state) {
+        this.healthRegeneration.start();
+      } else {
+        this.healthRegeneration.stop();
+      }
+
+      this.doHealthRegenerationCheck = state;
     }
 
     handleDoHealthCheck(state: boolean) {

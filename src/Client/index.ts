@@ -31,12 +31,11 @@ import { GenLiteMenuScaler } from "./plugins/genlite-menu-scaler.plugin";
 import { GenLiteMusicPlugin } from "./plugins/genlite-music.plugin";
 import { GenLiteLocationsPlugin } from "./plugins/genlite-locations.plugin";
 import { GenLiteItemTooltips } from "./plugins/genlite-item-tooltips.plugin";
-import { GenLiteSoundNotification } from "./plugins/genlite-sound-notification.plugin";
+import { GenLiteSoundNotification } from "./plugins/genlite-sound-notification/genlite-sound-notification.plugin";
 import { GenLiteGeneralChatCommands } from "./plugins/genlite-generalchatcommand.plugin";
 import { GenLiteUIPlugin } from "./core/plugins/genlite-ui-plugin";
 import { GenLiteHighscores } from "./plugins/genlite-highscores.plugin";
 import { GenLiteItemDisplays } from "./plugins/genlite-itemdisplay.plugin";
-import { GenLiteHealthRegenerationPlugin } from './plugins/genlite-health-regeneration.plugin';
 import { GenLiteFPSCounter } from "./plugins/genlite-fps.plugin";
 import { GenLiteEnhancedContextMenu } from "./plugins/genlite-enhanced-context-menu.plugin";
 import { GenLiteQuestPlugin } from "./plugins/genlite-quest.plugin";
@@ -132,6 +131,7 @@ let isInitialized = false;
         gameObject('Trade', 'Hv');
         gameObject('Friends', 'G_');
         gameObject('PlayerHUD', 'zv');
+        gameObject('Shop', 'jv');
 
 
         // Objects
@@ -157,6 +157,7 @@ let isInitialized = false;
         gameObject('TRADE', 'Mw');
         gameObject('NETWORK_CONTAINER', 'mg');
         gameObject('FRIENDS', 'dw');
+        gameObject('SHOP', 'yw');
 
         /* Special Case Objects */
         /* have to do this here because keyboard is constantly redefined */
@@ -207,7 +208,6 @@ let isInitialized = false;
         await genlite.pluginLoader.addPlugin(GenLiteGeneralChatCommands);
         await genlite.pluginLoader.addPlugin(GenLiteHighscores);
         await genlite.pluginLoader.addPlugin(GenLiteItemDisplays);
-        await genlite.pluginLoader.addPlugin(GenLiteHealthRegenerationPlugin);
         await genlite.pluginLoader.addPlugin(GenLiteFPSCounter);
         await genlite.pluginLoader.addPlugin(GenLiteEnhancedContextMenu);
         await genlite.pluginLoader.addPlugin(GenLiteQuestPlugin);
