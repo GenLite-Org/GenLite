@@ -520,7 +520,7 @@ export class GenLiteLocationsPlugin extends GenLitePlugin {
     }
 
     /* hook_PlayerMove(layer, x, y, force) {
-         this.log("I moved!")
+         console.log("I moved!")
          //This hook is not being used, right now we are extending onto the animation function which runs less frequently
          // than this hook which runs every cycle. (However the animation function runs roughly 9 times when a player
          // is moving as well as during attack animations..)

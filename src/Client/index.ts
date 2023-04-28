@@ -23,6 +23,8 @@ import { GenLiteCameraPlugin } from "./plugins/genlite-camera.plugin";
 import { GenLiteChatPlugin } from "./plugins/genlite-chat.plugin";
 import { GenLiteDropRecorderPlugin } from "./plugins/genlite-drop-recorder.plugin";
 import { GenLiteInventoryPlugin } from "./plugins/genlite-inventory.plugin";
+import { GenLiteItemHighlightPlugin } from "./plugins/genlite-item-highlight.plugin";
+import { GenLiteNPCHighlightPlugin } from "./plugins/genlite-npc-highlight.plugin";
 import { GenLiteRecipeRecorderPlugin } from "./plugins/genlite-recipe-recorder.plugin";
 import { GenLiteWikiDataCollectionPlugin } from "./plugins/genlite-wiki-data-collection.plugin";
 import { GenLiteXpCalculator } from "./plugins/genlite-xp-calculator.plugin";
@@ -34,6 +36,7 @@ import { GenLiteItemTooltips } from "./plugins/genlite-item-tooltips.plugin";
 import { GenLiteSoundNotification } from "./plugins/genlite-sound-notification/genlite-sound-notification.plugin";
 import { GenLiteGeneralChatCommands } from "./plugins/genlite-generalchatcommand.plugin";
 import { GenLiteUIPlugin } from "./core/plugins/genlite-ui-plugin";
+import { GenLitePlayerToolsPlugin } from "./plugins/genlite-playertools.plugin";
 import { GenLiteHighscores } from "./plugins/genlite-highscores.plugin";
 import { GenLiteItemDisplays } from "./plugins/genlite-itemdisplay.plugin";
 import { GenLiteFPSCounter } from "./plugins/genlite-fps.plugin";
@@ -42,7 +45,6 @@ import { GenLiteQuestPlugin } from "./plugins/genlite-quest.plugin";
 import { GenLiteEnhancedBanking } from "./plugins/genlite-enhanced-banking.plugin";
 import { GenLiteTaggingPlugin } from "./plugins/genlite-tagging.plugin";
 import { GenliteSimplifiedChatUiPlugin } from './plugins/genlite-simplified-chat-ui.plugin';
-import { GenLiteNamePlatesPlugin } from "./plugins/genlite-nameplates.plugin";
 
 // TODO: use globals.ts?
 declare global {
@@ -307,8 +309,9 @@ Post Init Plugins - once per page load
 
         /** Official Plugins */
         await genlite.pluginLoader.addPlugin(GenLiteCameraPlugin);
-        await genlite.pluginLoader.addPlugin(GenLiteNamePlatesPlugin);
         await genlite.pluginLoader.addPlugin(GenLiteChatPlugin);
+        await genlite.pluginLoader.addPlugin(GenLiteNPCHighlightPlugin);
+        await genlite.pluginLoader.addPlugin(GenLiteItemHighlightPlugin);
         await genlite.pluginLoader.addPlugin(GenLiteInventoryPlugin);
         await genlite.pluginLoader.addPlugin(GenLiteDropRecorderPlugin);
         await genlite.pluginLoader.addPlugin(GenLiteWikiDataCollectionPlugin);
@@ -321,6 +324,7 @@ Post Init Plugins - once per page load
         await genlite.pluginLoader.addPlugin(GenLiteItemTooltips);
         await genlite.pluginLoader.addPlugin(GenLiteSoundNotification);
         await genlite.pluginLoader.addPlugin(GenLiteGeneralChatCommands);
+        await genlite.pluginLoader.addPlugin(GenLitePlayerToolsPlugin);
         await genlite.pluginLoader.addPlugin(GenLiteHighscores);
         await genlite.pluginLoader.addPlugin(GenLiteItemDisplays);
         await genlite.pluginLoader.addPlugin(GenLiteFPSCounter);
@@ -329,6 +333,9 @@ Post Init Plugins - once per page load
         await genlite.pluginLoader.addPlugin(GenLiteEnhancedBanking);
         await genlite.pluginLoader.addPlugin(GenLiteTaggingPlugin);
         await genlite.pluginLoader.addPlugin(GenliteSimplifiedChatUiPlugin);
+
+
+
 
         // NOTE: currently initGenlite is called after the scene has started
         //       (in minified function qS). The initializeUI function does not

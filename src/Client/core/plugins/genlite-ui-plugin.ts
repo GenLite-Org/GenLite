@@ -714,7 +714,7 @@ export class GenLiteUIPlugin extends GenLitePlugin {
         pluginSettingsContainer.style.top = '26px';
         pluginSettingsContainer.style.left = '0px';
         pluginSettingsContainer.style.width = '100%';
-        pluginSettingsContainer.style.height = 'calc(100% - 27px)';
+        pluginSettingsContainer.style.height = 'calc(100% - 25px)';
         pluginSettingsContainer.style.overflowY = 'auto';
         pluginSettingsContainer.style.borderTop = '1px solid rgba(66, 66, 66, 1)';
 
@@ -835,7 +835,7 @@ export class GenLiteUIPlugin extends GenLitePlugin {
                     settings[setting].value = settings[setting].value.toString();
                     break;
                 default:
-                    this.error(`Invalid setting type for ${setting} in ${plugin}`);
+                    console.error(`Invalid setting type for ${setting} in ${plugin}`);
                     break;
             }
 

@@ -19,13 +19,12 @@ type StoreCallback = (db: IDBObjectStore) => void;
 export class GenLiteDatabasePlugin extends GenLitePlugin {
     public static pluginName = 'GenLiteDatabasePlugin';
     public static dbName = 'GenLiteDatabase';
-    public static version = 6;
+    public static version = 4;
 
     public supported = false;
     public initialized = false;
 
     stores: Array<{ callback: DatabaseCallback }> = [];
-    queuedTx = [];
 
     async init() {
         document.genlite.registerPlugin(this);
@@ -55,11 +54,6 @@ export class GenLiteDatabasePlugin extends GenLitePlugin {
         rw: 'readwrite' | 'readonly',
         callback: StoreCallback
     ) {
-        if (!this.initialized) {
-            this.queuedTx.push([store, rw, callback]);
-            return;
-        }
-
         if (!this.supported) {
             return;
         }
@@ -76,7 +70,7 @@ export class GenLiteDatabasePlugin extends GenLitePlugin {
 
     request(ignoreInit=false) {
         if (!ignoreInit && !this.initialized) {
-            this.warn("IDB is not yet initialized");
+            console.log("IDB is not yet initialized");
             return null;
         }
         if (!this.supported) {
@@ -96,43 +90,24 @@ export class GenLiteDatabasePlugin extends GenLitePlugin {
 
     async postInit() {
         this.supported = 'indexedDB' in window;
-        if (!this.supported) {
-            this.postInitQueue();
-            return;
-        }
-
         let r = this.request(true);
-        let plugin = this;
         if (r) {
             r.onsuccess = (e) => {
                 // TODO: plugin onopen actions
                 r.result.close();
-                plugin.postInitQueue();
+                this.initialized = true;
             };
             r.onupgradeneeded = (e: any) => {
                 let db = e.target.result;
-                for (const store of plugin.stores) {
+                for (const store of this.stores) {
                     try {
                         store.callback(db);
                     } catch (err) {
-                        plugin.error('creating store: ', err);
+                        this.error('creating store: ', err);
                     }
                 }
             };
         }
-    }
-
-    postInitQueue() {
-        this.initialized = true;
-        if (this.supported) {
-            for (const entry of this.queuedTx) {
-                const store = entry[0];
-                const rw = entry[1];
-                const callback = entry[2];
-                this.storeTx(store, rw, callback);
-            }
-        }
-        this.queuedTx = [];
     }
 
     handlePluginState(state: boolean): void {
