@@ -104,8 +104,8 @@ export class GenLiteItemDisplays extends GenLitePlugin {
     Trade_handlePacket(payload) {
         if (!this.isPluginEnabled)
             return;
-        this.itemExtraUpdate(payload[0].contents.myOffer, document.game.TRADE.DOM_your_slots);
-        this.itemExtraUpdate(payload[0].contents.theirOffer, document.game.TRADE.DOM_their_slots);
+        this.itemExtraUpdate(payload.contents.myOffer, document.game.TRADE.DOM_your_slots);
+        this.itemExtraUpdate(payload.contents.theirOffer, document.game.TRADE.DOM_their_slots);
     }
 
     itemExtraUpdate(slots, doms) {

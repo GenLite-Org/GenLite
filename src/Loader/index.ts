@@ -31,7 +31,7 @@ if (genfanadUpdateTimestamp == null) {
     // If it doesn't exist, then create it
     localStorage.setItem('GenLite.UpdateTimestamp', new Date(0).toString());
 
-    // And set the timestamp to 0
+    // And set the timestamp to 05
     genfanadUpdateTimestamp = localStorage.getItem('GenFanad.UpdateTimestamp');
 }
 
@@ -90,15 +90,12 @@ if (genliteModifiedDate == null || genliteModifiedDate == undefined) {
 
 // Genfanad Client is always updated
 let genfanadJS = localStorage.getItem('GenFanad.Client');
-if (genfanadLastModified > genfanadUpdateTimestampDate) {
-    localStorage.setItem('GenFanad.UpdateTimestamp', genfanadLastModified.toString());
-
+if (genfanadLastModified.getTime() > genfanadUpdateTimestampDate.getTime()) {
     let xhrClientJS = new XMLHttpRequest();
     xhrClientJS.open("GET", "https://play.genfanad.com/play/js/client.js");
     xhrClientJS.onload = function () {
         if (xhrClientJS.status == 200) {
             genfanadJS = xhrClientJS.responseText;
-
             // Implement Work-Arounds for Closure
             genfanadJS = genfanadJS.replace(
                 /import.meta.url/g,
@@ -121,6 +118,7 @@ if (genfanadLastModified > genfanadUpdateTimestampDate) {
         } else {
             console.error("GenFanad Client.js failed to load. Status: " + xhrClientJS.status);
         }
+        localStorage.setItem('GenFanad.UpdateTimestamp', genfanadLastModified.toString());
     }
     xhrClientJS.send();
 }

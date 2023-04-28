@@ -38,8 +38,8 @@ export class GenLiteCameraPlugin extends GenLitePlugin {
     unlockCamera: boolean = true;
     maxDistance: number = 15;
     minDistance: number = Math.PI;
-    minAngle: number = 0.35;
-    maxAngle: number = 1.4;
+    minAngle: number = 20; // degrees
+    maxAngle: number = 80; // degrees
 
     renderDistance: number = 65;
     distanceFog: boolean = false;
@@ -58,15 +58,6 @@ export class GenLiteCameraPlugin extends GenLitePlugin {
             value: this.unlockCamera,
             stateHandler: this.handleUnlockCameraToggle.bind(this),
             "children": {
-                "Max Distance": {
-                    type: "range",
-                    oldKey: "GenLite.Camera.maxDistance",
-                    value: this.maxDistance,
-                    stateHandler: this.handleMaxDistance.bind(this),
-                    min: 8,
-                    max: 32,
-                    step: 1,
-                },
                 "Min Distance": {
                     "type": "range",
                     "oldKey": "GenLite.Camera.minDistance",
@@ -76,21 +67,30 @@ export class GenLiteCameraPlugin extends GenLitePlugin {
                     "max": 8,
                     "step": 1,
                 },
-                "Max Pitch": {
+                "Max Distance": {
+                    type: "range",
+                    oldKey: "GenLite.Camera.maxDistance",
+                    value: this.maxDistance,
+                    stateHandler: this.handleMaxDistance.bind(this),
+                    min: 8,
+                    max: 32,
+                    step: 1,
+                },
+                "Min Pitch°": {
                     "type": "range",
                     "value": this.minAngle,
                     "stateHandler": this.handleMinAngle.bind(this),
                     "min": 0,
-                    "max": 1.5,
-                    "step": 0.05,
+                    "max": 90,
+                    "step": 1,
                 },
-                "Min Pitch": {
+                "Max Pitch°": {
                     "type": "range",
                     "value": this.maxAngle,
                     "stateHandler": this.handleMaxAngle.bind(this),
                     "min": 0,
-                    "max": 1.5,
-                    "step": 0.05,
+                    "max": 90,
+                    "step": 1,
                 },
             }
         },
@@ -266,8 +266,8 @@ export class GenLiteCameraPlugin extends GenLitePlugin {
             if (this.isPluginEnabled && this.unlockCamera === true) {
                 document.game.GRAPHICS.camera.controls.minDistance = this.minDistance;
                 document.game.GRAPHICS.camera.controls.maxDistance = this.maxDistance;
-                document.game.GRAPHICS.camera.controls.minPolarAngle = this.minAngle;
-                document.game.GRAPHICS.camera.controls.maxPolarAngle = this.maxAngle;
+                document.game.GRAPHICS.camera.controls.minPolarAngle = this.minAngle * Math.PI / 180;
+                document.game.GRAPHICS.camera.controls.maxPolarAngle = this.maxAngle * Math.PI / 180;
             } else {
                 document.game.GRAPHICS.camera.controls.minDistance = 8
                 document.game.GRAPHICS.camera.controls.maxDistance = 8;

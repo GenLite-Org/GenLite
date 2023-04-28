@@ -199,7 +199,7 @@ Post Init Plugins - once per page load
         function hookKeyboard() {
             window.addEventListener("focus", (e) => {
                 setTimeout(() => {
-                    document.game.KEYBOARD = document.client.get('XS');
+                    document.game.KEYBOARD = document.client.get('ZS');
                 }, 10);
             });
         }
@@ -219,7 +219,7 @@ Post Init Plugins - once per page load
         gameObject('FadeAnimation', 'd_');
         gameObject('FrozenEffect', 'Gg');
         gameObject('Game', 'X_');
-        gameObject('Graphics', 'NS');
+        gameObject('Graphics', 'BS');
         gameObject('HumanCharacter', 'jg');
         gameObject('ItemStack', 'Lg');
         gameObject('MinimapRenderer', 'j_');
@@ -227,7 +227,7 @@ Post Init Plugins - once per page load
         gameObject('MonsterCharacter', 'Hg');
         gameObject('Network', 'ug');
         gameObject('NewSegmentLoader', 'yS');
-        gameObject('OptimizedScene', 'PS');
+        gameObject('OptimizedScene', 'NS');
         gameObject('PassThroughSpineTexture', 'Pg');
         gameObject('Player', 'O_');
         gameObject('Seed', 'z_');
@@ -237,48 +237,46 @@ Post Init Plugins - once per page load
         gameObject('SpriteProjectileAnimation', 'f_');
         gameObject('TeleportAnimation', 'u_');
         gameObject('TemporaryScenery', 'H_');
-        gameObject('WorldManager', 'IS');
+        gameObject('WorldManager', 'LS');
         gameObject('WorldObject', 'E_');
         gameObject('Math', 'xi', document.game.THREE);
         gameObject('SFXPlayer', '$m');
-        gameObject('PlayerHUD', 'zv');
+        gameObject('PlayerHUD', 'Ov');
         gameObject('PlayerInfo', 'Xg');
-        gameObject('Inventory', 'Cv');
-        gameObject('PhasedLoadingManager', 'gS');
-        gameObject('Trade', 'Hv');
+        gameObject('Inventory', 'zv');
+        gameObject('PhasedLoadingManager', 'vS');
+        gameObject('Trade', 'Gv');
         gameObject('Friends', 'G_');
-        gameObject('PlayerHUD', 'zv');
         gameObject('Shop', 'jv');
 
 
         // Objects
-        gameObject('BANK', 'ew');
-        gameObject('CHAT', 'nw');
-        gameObject('DATA', 'Qy');
-        gameObject('FRIENDS', 'dw');
+        gameObject('BANK', 'tw');
+        gameObject('CHAT', 'iw');
+        gameObject('DATA', 'eS');
+        gameObject('FRIENDS', 'uw');
         gameObject('GAME', 'K_.game');
-        gameObject('GRAPHICS', 'KS.graphics');
-        gameObject('INVENTORY', 'uw');
+        gameObject('GRAPHICS', '$S.graphics');
+        gameObject('INVENTORY', 'pw');
         gameObject('NETWORK', 'pg.network');
-        gameObject('PHASEDLOADINGMANAGER', 'gS');
-        gameObject('PLAYER', '$S.player');
+        gameObject('PHASEDLOADINGMANAGER', 'vS');
+        gameObject('PLAYER', 'JS.player');
         gameObject('SFX_PLAYER', 'Jm');
-        gameObject('WORLDMANAGER', 'IS');
-        gameObject('MUSIC_PLAYER', 'Nv');
-        gameObject('MUSIC_TRACK_NAMES', 'Pv');
-        gameObject('SETTINGS', 'bw');
+        gameObject('WORLDMANAGER', 'LS');
+        gameObject('MUSIC_PLAYER', 'Bv');
+        gameObject('MUSIC_TRACK_NAMES', 'Nv');
+        gameObject('SETTINGS', 'yw');
         gameObject('THREE', 'e');
-        gameObject('PLAYER_INFO', 'fw');
-        gameObject('PLAYER_HUD', '_w');
+        gameObject('PLAYER_INFO', 'gw');
+        gameObject('PLAYER_HUD', 'fw');
         gameObject('NPC', 'I_');
-        gameObject('TRADE', 'Mw');
+        gameObject('TRADE', 'Tw');
         gameObject('NETWORK_CONTAINER', 'mg');
-        gameObject('FRIENDS', 'dw');
-        gameObject('SHOP', 'yw');
+        gameObject('SHOP', 'Sw');
 
         /* Special Case Objects */
         /* have to do this here because keyboard is constantly redefined */
-        gameObject('KEYBOARD', 'XS');
+        gameObject('KEYBOARD', 'ZS');
         hookKeyboard();
 
         //Functions
@@ -355,10 +353,9 @@ Post Init Plugins - once per page load
     function hookStartScene() {
 
         let doc = (document as any);
-        doc.client.set('document.client.originalStartScene', doc.client.get('qS'));
-        doc.client.set('qS', function () {
+        doc.client.set('document.client.originalStartScene', doc.client.get('WS'));
+        doc.client.set('WS', function () {
             document.client.originalStartScene();
-
             setTimeout(document.initGenLite, 100);
         });
     }
