@@ -213,7 +213,7 @@ Post Init Plugins - once per page load
         gameObject('Chat', 'rv');
         gameObject('Actor', 'Dg');
         gameObject('Animation', 'h_');
-        gameObject('Camera', 'DS');
+        gameObject('Camera', 'PS');
         gameObject('Character', 'A_');
         gameObject('DeduplicatingCachedLoader', 'wS');
         gameObject('FadeAnimation', 'd_');

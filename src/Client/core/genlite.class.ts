@@ -42,7 +42,6 @@ export class GenLite {
     }
 
     async init() {
-        ("installing hooks");
         this.installHookNoProto('PhasedLoadingManager', 'start_phase', this.hookPhased);
         this.installHookNoProto('WORLDMANAGER', 'loadSegment')
         this.installHookNoProto('WORLDMANAGER', 'createSegment')
