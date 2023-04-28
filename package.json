@@ -11,8 +11,7 @@
     "@types/stats.js": "^0.17.0",
     "robust-point-in-polygon": "^1.0.3",
     "stats.js": "^0.17.0",
-    "xmlhttprequest": "^1.8.0",
-    "troika-three-text": "^0.47.1"
+    "xmlhttprequest": "^1.8.0"
   },
   "devDependencies": {
     "jsdoc": "^4.0.0",

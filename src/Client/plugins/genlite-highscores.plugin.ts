@@ -80,7 +80,7 @@ export class GenLiteHighscores extends GenLitePlugin {
     curCombatLevel: number = 0;
     async init() {
         document.genlite.registerPlugin(this);
-        this.warn(`GenLiteHighscores need an implementation for Toggle All`);
+        console.log(`%c[GenLite] TODO: %c${this.constructor.name} %c need an implementation for Toggle All`, "color: #ff0", "color: #fff", "color: #f00");
         // this.sendAll = document.genlite.settings.add(`Highscore.ToggleButton`, false, `Toggle All Settings`, "checkbox", this.toggleAll, this, undefined, undefined, "Highscores.SubmitToServer");
         
         for (let key in this.statsToSend) {
