@@ -14,8 +14,8 @@
 
 import { GenLitePlugin } from '../core/interfaces/plugin.class';
 
-export class GenliteFilterPlugin extends GenLitePlugin {
-    static pluginName = 'GenliteFilterPlugin';
+export class GenLiteFilterPlugin extends GenLitePlugin {
+    static pluginName = 'GenLiteFilterPlugin';
 
     isPluginEnabled: boolean = false;
 
@@ -95,7 +95,7 @@ export class GenliteFilterPlugin extends GenLitePlugin {
         if (state) {
             this.loginOK();
         } else {
-            for(let element of Object.keys(this.elementsToFilter))
+            for (let element of Object.keys(this.elementsToFilter))
                 this.elementsToFilter[element].style.filter = '';
         }
     }
@@ -131,13 +131,13 @@ export class GenliteFilterPlugin extends GenLitePlugin {
     }
 
     updateFilters() {
-        if(!this.isPluginEnabled)
+        if (!this.isPluginEnabled)
             return;
         let filterString = "";
         for (let filter of Object.keys(this.filters)) {
             filterString += ` ${filter}(${this.filters[filter]})`
         }
-        for(let element of Object.keys(this.elementsToFilter))
+        for (let element of Object.keys(this.elementsToFilter))
             this.elementsToFilter[element].style.filter = filterString;
     }
 

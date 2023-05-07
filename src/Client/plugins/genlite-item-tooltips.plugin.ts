@@ -11,7 +11,7 @@
     You should have received a copy of the GNU General Public License along with Foobar. If not, see <https://www.gnu.org/licenses/>.
 */
 
-import {GenLitePlugin} from '../core/interfaces/plugin.class';
+import { GenLitePlugin } from '../core/interfaces/plugin.class';
 
 export class GenLiteItemTooltips extends GenLitePlugin {
     static pluginName = 'GenLiteItemTooltips';
@@ -28,7 +28,7 @@ export class GenLiteItemTooltips extends GenLitePlugin {
     isFoodEnabled: boolean = false;
     isValueEnabled: boolean = false;
 
-    pluginSettings : Settings = {
+    pluginSettings: Settings = {
         "Food Tooltips": {
             type: "checkbox",
             oldKey: "GenLite.FoodToolTips.Enable",
@@ -42,7 +42,7 @@ export class GenLiteItemTooltips extends GenLitePlugin {
             stateHandler: this.handleValueEnableDisable.bind(this)
         }
     };
-    
+
     async init() {
         document.genlite.registerPlugin(this);
     }
@@ -204,8 +204,10 @@ export class GenLiteItemTooltips extends GenLitePlugin {
         if (event.target.classList.contains("new_ux-item-quantity-span")) {
             slot = event.target.offsetParent.offsetParent.offsetParent.slot_number; //this is stupid
         } else {
-            slot = event.target.offsetParent.offsetParent.slot_number;
+            slot = event.target.offsetParent?.offsetParent?.slot_number;
         }
+        if (!slot)
+            return;
         let itemData = document.game.DATA.items[document.game.INVENTORY.items[slot].item];
         if (callback_this.isFoodEnabled && itemData.consumable
             && itemData.consumable.condition && itemData.consumable.condition.params.threshold_steps)

@@ -43,7 +43,8 @@ import { GenLiteEnhancedBanking } from "./plugins/genlite-enhanced-banking.plugi
 import { GenLiteTaggingPlugin } from "./plugins/genlite-tagging.plugin";
 import { GenliteSimplifiedChatUiPlugin } from './plugins/genlite-simplified-chat-ui.plugin';
 import { GenLiteNamePlatesPlugin } from "./plugins/genlite-nameplates.plugin";
-import { GenliteFilterPlugin } from "./plugins/genlite-filters.plugin";
+import { GenLiteFilterPlugin } from "./plugins/genlite-filters.plugin";
+import { GenLiteHotKeyPlugin } from "./plugins/genlite-hotkeys.plugin";
 
 
 // TODO: use globals.ts?
@@ -273,6 +274,8 @@ Post Init Plugins - once per page load
         gameObject('TRADE', 'Tw');
         gameObject('NETWORK_CONTAINER', 'mg');
         gameObject('SHOP', 'Sw');
+        gameObject('SPELLS', "Mw");
+        gameObject('CURRENCY', "hw");
 
         /* Special Case Objects */
         /* have to do this here because keyboard is constantly redefined */
@@ -300,7 +303,7 @@ Post Init Plugins - once per page load
 
         /** Core Features */
         genlite.notifications = await genlite.pluginLoader.addPlugin(GenLiteNotificationPlugin);
-        genlite.settings = await genlite.pluginLoader.addPlugin(GenLiteSettingsPlugin);
+        //genlite.settings = await genlite.pluginLoader.addPlugin(GenLiteSettingsPlugin);
         genlite.commands = await genlite.pluginLoader.addPlugin(GenLiteCommandsPlugin);
         genlite.database = await genlite.pluginLoader.addPlugin(GenLiteDatabasePlugin);
         genlite.ui = await genlite.pluginLoader.addPlugin(GenLiteUIPlugin);
@@ -331,7 +334,8 @@ Post Init Plugins - once per page load
         await genlite.pluginLoader.addPlugin(GenLiteEnhancedBanking);
         await genlite.pluginLoader.addPlugin(GenLiteTaggingPlugin);
         await genlite.pluginLoader.addPlugin(GenliteSimplifiedChatUiPlugin);
-        await genlite.pluginLoader.addPlugin(GenliteFilterPlugin);
+        await genlite.pluginLoader.addPlugin(GenLiteFilterPlugin);
+        await genlite.pluginLoader.addPlugin(GenLiteHotKeyPlugin);
 
         // NOTE: currently initGenlite is called after the scene has started
         //       (in minified function qS). The initializeUI function does not
@@ -345,7 +349,7 @@ Post Init Plugins - once per page load
         //         The GenLiteUIPlugin.registerPlugin function requires being present in the postInit for a function
         //         as it calls various things involving settings that may not be ready until after init.
     }
-    
+
     function hookStartScene() {
 
         let doc = (document as any);
