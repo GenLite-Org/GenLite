@@ -28,6 +28,8 @@ interface Inventory {
     visible: boolean,
 
     countItemTotal(itemKey: string): number
+    show(): void;
+    hide(): void;
 }
 
 interface invContextMap {

@@ -47,7 +47,7 @@ export class GenLiteRecipeRecorderPlugin extends GenLitePlugin {
         let plugin = this;
         window.addEventListener('keydown', this.keyDownHandler.bind(this));
         window.addEventListener('keyup', this.keyUpHandler.bind(this));
-        window.addEventListener('focus', function() {
+        window.addEventListener('focus', function () {
             window.addEventListener('mousemove', function onmousemove(e) {
                 window.removeEventListener('mousemove', onmousemove, false);
                 if (e.altKey) {
@@ -577,8 +577,11 @@ export class GenLiteRecipeRecorderPlugin extends GenLitePlugin {
                 if (params.action.params) {
                     mats = Object.keys(params.action.params);
                     mats = mats.sort();
-                    for (let i of mats) // if params is set here then record a complex recipe name
+                    console.log(mats);
+                    for (let i of mats) { // if params is set here then record a complex recipe name
+                        if (i == "ignore_qualities") continue;
                         this.recipeName = this.recipeName.concat("__", i, params.action.params[i]);
+                    }
                 }
                 if (this.recipeResults[this.recipeName] === undefined) {
                     this.recipeResults[this.recipeName] = {
@@ -778,8 +781,14 @@ export class GenLiteRecipeRecorderPlugin extends GenLitePlugin {
 
     resetResultsList() {
         this.recipeResults = {};
+        localStorage.removeItem("GenliteRecipeRecorder");
+        localStorage.setItem("GenliteRecipeRecorder", JSON.stringify({ recipe: this.recipeResults, gathering: this.gatherResults }));
+    }
+
+    resetGatherList() {
         this.gatherResults = {};
         localStorage.removeItem("GenliteRecipeRecorder");
+        localStorage.setItem("GenliteRecipeRecorder", JSON.stringify({ recipe: this.recipeResults, gathering: this.gatherResults }));
     }
 
     deleteRecipe(key: string) {

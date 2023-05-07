@@ -19,7 +19,7 @@ type StoreCallback = (db: IDBObjectStore) => void;
 export class GenLiteDatabasePlugin extends GenLitePlugin {
     public static pluginName = 'GenLiteDatabasePlugin';
     public static dbName = 'GenLiteDatabase';
-    public static version = 6;
+    public static version = 7;
 
     public supported = false;
     public initialized = false;
@@ -74,7 +74,7 @@ export class GenLiteDatabasePlugin extends GenLitePlugin {
         }
     }
 
-    request(ignoreInit=false) {
+    request(ignoreInit = false) {
         if (!ignoreInit && !this.initialized) {
             this.warn("IDB is not yet initialized");
             return null;

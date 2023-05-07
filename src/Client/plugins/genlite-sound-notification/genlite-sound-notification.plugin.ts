@@ -52,7 +52,7 @@ export class GenLiteSoundNotification extends GenLitePlugin {
                     value: this.healthThreshold,
                     stateHandler: this.setHealthThreshold.bind(this),
                     min: 1,
-                    max: 100
+                    max: document.game.PLAYER_INFO.skills.vitality.level
                 }
             }
         },
@@ -187,7 +187,7 @@ export class GenLiteSoundNotification extends GenLitePlugin {
     Game_combatUpdate(update) {
         if (update.id != document.game.PLAYER.id)
             return;
-        if ((update.hp / update.maxhp) <= (this.healthThreshold / 100) && this.doHealthCheck)
+        if (update.hp <= this.healthThreshold && this.doHealthCheck)
             this.playerInUse.play('spell-failure');
     }
 

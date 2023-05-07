@@ -29,7 +29,10 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
     settingsMenu: HTMLElement = null;
     listContainer: HTMLElement = null;
     itemElements: Record<string, HTMLElement> = {};
-    itemPriorities: Record<string, "low"|"high"> = {};
+    itemPriorities: Record<string, "low" | "high"> = {};
+
+    isHealthInit: boolean = false;
+    heathList: { [id: string]: number } = {} // where id is mob id is name-level
 
     pluginSettings: Settings = {
         "Global Scaling": {
@@ -92,6 +95,13 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
             });
         });
 
+        document.genlite.database.add((db) => {
+            if (db.objectStoreNames.contains('healthList')) return;
+            let store = db.createObjectStore('healthList', {
+                keyPath: 'healthKey',
+            });
+        });
+
         // Parse the JSON array stored in localStorage and convert it to array of strings (the NPC names to hide)
         this.untaggedNPCs = JSON.parse(localStorage.getItem("GenLite.NamePlates.HiddenNPCs") || "[]");
     }
@@ -102,6 +112,7 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
         this.pluginSettings = document.genlite.ui.registerPlugin("Name Plates", null, this.handlePluginState.bind(this), this.pluginSettings);
 
         this.loadPrioritiesFromIDB();
+        this.loadHealthValsFromIDB();
     }
 
     createCSS() {
@@ -403,7 +414,7 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
             }
 
             if (itemdata.border) {
-                let path = `items/placeholders/${ itemdata.border }_border.png`;
+                let path = `items/placeholders/${itemdata.border}_border.png`;
                 path = document.game.getStaticPath(path);
                 let qual = <HTMLImageElement>document.createElement("img");
                 qual.classList.add("new_ux-inventory_quality-image");
@@ -551,11 +562,12 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
         // Update Player Text Scale
         if (!this.scaleDistance) {
             var scaleVector = new document.game.THREE.Vector3();
-            var scale = scaleVector.subVectors(this.NamePlates["Players"][character.id].position, camera.position).length() / this.scaleFactor;
+            var scale = scaleVector.subVectors(this.NamePlates["Players"][character.id].position, camera.position).length() * 0.005 * this.scaleFactor;
             this.NamePlates["Players"][character.id].scale.set(scale, scale, scale);
         } else {
             // Scale the text to slowly get smaller as the player moves away from the camera;
-            this.NamePlates["Players"][character.id].scale.set(this.scaleFactor, this.scaleFactor, this.scaleFactor);
+            let scaledScaleFactor = this.scaleFactor * 0.05;
+            this.NamePlates["Players"][character.id].scale.set(scaledScaleFactor, scaledScaleFactor, scaledScaleFactor);
         }
 
         // Update Player Text Quaternion (Rotation)
@@ -678,13 +690,13 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
         if (!this.isPluginEnabled) { return; }
         if (!this.showNPCNames) { return; }
         if (!document.game.GAME.npcs[npc.id]) { return; }
+        if (!this.isHealthInit) { return; }
 
 
         if (!this.NamePlates["NPCs"][npc.id]) {
             this.NamePlates["NPCs"][npc.id] = {};
             this.NamePlates["NPCs"][npc.id].name = new Text();
-            this.NamePlates["NPCs"][npc.id].name.text = npc.name();
-
+            this.createNPCTextElement(this.NamePlates["NPCs"][npc.id].name, npc, "#FFFF00")
             // Determine if the NPC is hidden
             if (this.untaggedNPCs.includes(npc.name())) {
                 if (this.invertTagging) {
@@ -699,90 +711,15 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
                     this.NamePlates["NPCs"][npc.id].name.visible = true;
                 }
             }
-            this.NamePlates["NPCs"][npc.id].name.color = "#FFFF00";
-            this.NamePlates["NPCs"][npc.id].name.fontSize = 0.15;
-            this.NamePlates["NPCs"][npc.id].name.anchorX = "center";
-            this.NamePlates["NPCs"][npc.id].name.anchorY = "bottom";
-            this.NamePlates["NPCs"][npc.id].name.font = "https://raw.githubusercontent.com/KKonaOG/Old-GenLite/main/Acme-Regular.ttf";
-
-            // Apply a slight outline to the text
-            this.NamePlates["NPCs"][npc.id].name.outlineColor = "#000000";
-            this.NamePlates["NPCs"][npc.id].name.outlineWidth = 0.010;
-            this.NamePlates["NPCs"][npc.id].name.outlineBlur = 0.005;
-
-            document.game.GRAPHICS.scene.threeScene.add(this.NamePlates["NPCs"][npc.id].name);
-
-            this.NamePlates["NPCs"][npc.id].name.sync(() => {
-                this.NamePlates["NPCs"][npc.id].name.renderOrder = 10001;
-                this.NamePlates["NPCs"][npc.id].name.material[0].depthTest = false;
-                this.NamePlates["NPCs"][npc.id].name.material[0].depthWrite = false;
-                this.NamePlates["NPCs"][npc.id].name.material[1].depthTest = false;
-                this.NamePlates["NPCs"][npc.id].name.material[1].depthWrite = false;
-
-
-                if (npc.info.attackable) {
-                    this.NamePlates["NPCs"][npc.id].name.position.y += npc.height;
-
-
-                    let playerLevel = document.game.PLAYER.character.combatLevel;
-
-                    let levelDiff = npc.info.level - playerLevel
-                    let color = "#ffff00";
-
-                    if (levelDiff > 3 && levelDiff < 6) {
-                        color = "#f80"
-                    } else if (levelDiff >= 6) {
-                        color = "#f00";
-                    } else if (levelDiff < -3 && levelDiff > -6) {
-                        color = "#8f0";
-                    } else if (levelDiff <= -6) {
-                        color = "#4C4E52";
-                    }
-
-                    // It should be the Name (Level X)
-                    this.NamePlates["NPCs"][npc.id].attackText = new Text();
-                    this.NamePlates["NPCs"][npc.id].attackText.text = " (Level " + npc.info.level + ")";
-                    this.NamePlates["NPCs"][npc.id].attackText.color = color;
-                    this.NamePlates["NPCs"][npc.id].attackText.font = "https://raw.githubusercontent.com/KKonaOG/Old-GenLite/main/Acme-Regular.ttf";
-                    this.NamePlates["NPCs"][npc.id].attackText.fontSize = 0.10;
-                    this.NamePlates["NPCs"][npc.id].attackText.anchorX = "center";
-                    this.NamePlates["NPCs"][npc.id].attackText.anchorY = "top";
-                    this.NamePlates["NPCs"][npc.id].attackText.renderOrder = 10001;
-                    this.NamePlates["NPCs"][npc.id].attackText.material.depthTest = false;
-                    this.NamePlates["NPCs"][npc.id].attackText.material.depthWrite = false;
-                    this.NamePlates["NPCs"][npc.id].attackText.visible = this.isPluginEnabled;
-                    this.NamePlates["NPCs"][npc.id].name.add(this.NamePlates["NPCs"][npc.id].attackText);
-
-                    // Apply a slight outline to the text
-                    this.NamePlates["NPCs"][npc.id].attackText.outlineColor = "#000000";
-                    this.NamePlates["NPCs"][npc.id].attackText.outlineWidth = 0.010;
-                    this.NamePlates["NPCs"][npc.id].attackText.outlineBlur = 0.005;
-
-                    this.NamePlates["NPCs"][npc.id].attackText.sync(() => {
-                        this.NamePlates["NPCs"][npc.id].attackText.renderOrder = 10001;
-                        this.NamePlates["NPCs"][npc.id].attackText.material[0].depthTest = false;
-                        this.NamePlates["NPCs"][npc.id].attackText.material[0].depthWrite = false;
-                        this.NamePlates["NPCs"][npc.id].attackText.material[1].depthTest = false;
-                        this.NamePlates["NPCs"][npc.id].attackText.material[1].depthWrite = false;
-                    });
-                }
-
-                this.NamePlates["NPCs"][npc.id].name.sync(() => {
-                    if (this.NamePlates["NPCs"][npc.id].attackText) {
-                        this.NamePlates["NPCs"][npc.id].attackText.position.y -= npc.height;
-                    }
-                });
-            });
         }
-
         // If not visible, don't update
         if (!this.NamePlates["NPCs"][npc.id].name.visible) {
             return;
         }
-
-        this.NamePlates["NPCs"][npc.id].name.position.x = npc.worldPos.x;
-        this.NamePlates["NPCs"][npc.id].name.position.y = npc.worldPos.y + npc.height;
-        this.NamePlates["NPCs"][npc.id].name.position.z = npc.worldPos.z;
+        let curPos = npc.object.position();
+        this.NamePlates["NPCs"][npc.id].name.position.x = curPos.x;
+        this.NamePlates["NPCs"][npc.id].name.position.y = curPos.y + npc.height;
+        this.NamePlates["NPCs"][npc.id].name.position.z = curPos.z;
 
         // Update NPC Text Position
         if (npc.info.attackable && !this.NamePlates["NPCs"][npc.id].attackText) {
@@ -790,7 +727,7 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
             let playerLevel = document.game.PLAYER.character.combatLevel;
 
             let levelDiff = npc.info.level - playerLevel
-            let color = "#4C4E52";
+            let color = "#ffff00";
 
             if (levelDiff > 3 && levelDiff < 6) {
                 color = "#f80"
@@ -799,49 +736,26 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
             } else if (levelDiff < -3 && levelDiff > -6) {
                 color = "#8f0";
             } else if (levelDiff <= -6) {
-                color = "#4C4E52";
+                color = "#ccc";
             }
-
-            // It should be the Name (Level X)
             this.NamePlates["NPCs"][npc.id].attackText = new Text();
-            this.NamePlates["NPCs"][npc.id].attackText.text = " (Level " + npc.info.level + ")";
-            this.NamePlates["NPCs"][npc.id].attackText.color = color;
-            this.NamePlates["NPCs"][npc.id].attackText.font = "https://raw.githubusercontent.com/KKonaOG/Old-GenLite/main/Acme-Regular.ttf";
-            this.NamePlates["NPCs"][npc.id].attackText.fontSize = 0.10;
-            this.NamePlates["NPCs"][npc.id].attackText.anchorX = "center";
-            this.NamePlates["NPCs"][npc.id].attackText.anchorY = "top";
-            this.NamePlates["NPCs"][npc.id].attackText.renderOrder = 10001;
-            this.NamePlates["NPCs"][npc.id].attackText.material.depthTest = false;
-            this.NamePlates["NPCs"][npc.id].attackText.material.depthWrite = false;
-            this.NamePlates["NPCs"][npc.id].attackText.visible = this.isPluginEnabled;
-            this.NamePlates["NPCs"][npc.id].name.add(this.NamePlates["NPCs"][npc.id].attackText);
-
-            // Apply a slight outline to the text
-            this.NamePlates["NPCs"][npc.id].attackText.outlineColor = "#000000";
-            this.NamePlates["NPCs"][npc.id].attackText.outlineWidth = 0.010;
-            this.NamePlates["NPCs"][npc.id].attackText.outlineBlur = 0.005;
-
-            this.NamePlates["NPCs"][npc.id].attackText.sync(() => {
-                this.NamePlates["NPCs"][npc.id].attackText.renderOrder = 10001;
-                this.NamePlates["NPCs"][npc.id].attackText.material[0].depthTest = false;
-                this.NamePlates["NPCs"][npc.id].attackText.material[0].depthWrite = false;
-                this.NamePlates["NPCs"][npc.id].attackText.material[1].depthTest = false;
-                this.NamePlates["NPCs"][npc.id].attackText.material[1].depthWrite = false;
-            });
-
-            this.NamePlates["NPCs"][npc.id].attackText.position.y = 0;
+            this.createAttackTextElement(this.NamePlates["NPCs"][npc.id].name, this.NamePlates["NPCs"][npc.id].attackText, " (Level " + npc.info.level + ")", color);
+            let heathKey = `${npc.name()}-${npc.info.level}`
+            if (this.heathList[heathKey]) {
+                this.NamePlates["NPCs"][npc.id].healthText = new Text();
+                this.createHealthTextElement(this.NamePlates["NPCs"][npc.id].healthText, `${this.heathList[heathKey]}HP`, "#FFFF00")
+            }
         }
 
         // Update NPC Text Scale
         if (!this.scaleDistance) {
             var scaleVector = new document.game.THREE.Vector3();
-            var scale = scaleVector.subVectors(this.NamePlates["NPCs"][npc.id].name.position, camera.position).length() / this.scaleFactor;
+            var scale = scaleVector.subVectors(this.NamePlates["NPCs"][npc.id].name.position, camera.position).length() * 0.005 * this.scaleFactor;
             this.NamePlates["NPCs"][npc.id].name.scale.set(scale, scale, scale);
         } else {
-            this.NamePlates["NPCs"][npc.id].name.scale.set(this.scaleFactor, this.scaleFactor, this.scaleFactor);
+            let scaledScaleFactor = this.scaleFactor * 0.05;
+            this.NamePlates["NPCs"][npc.id].name.scale.set(scaledScaleFactor, scaledScaleFactor, scaledScaleFactor);
         }
-
-
 
         // Update NPC Text Quaternion (Rotation)
         this.NamePlates["NPCs"][npc.id].name.quaternion.copy(camera.quaternion);
@@ -860,9 +774,36 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
                 this.NamePlates["NPCs"][npcID].attackText.dispose();
                 delete this.NamePlates["NPCs"][npcID].attackText;
             }
+            if (this.NamePlates["NPCs"][npcID].healthText) {
+                document.game.GRAPHICS.scene.threeScene.remove(this.NamePlates["NPCs"][npcID].healthText);
+                this.NamePlates["NPCs"][npcID].healthText.dispose();
+                delete this.NamePlates["NPCs"][npcID].healthText;
+            }
 
             delete this.NamePlates["NPCs"][npcID];
         }
+    }
+
+    async Game_combatUpdate(update: any): Promise<void> {
+        let npcPlate = this.NamePlates["NPCs"][update.id];
+        if (!npcPlate)
+            return;
+        let npc = document.game.GAME.npcs[update.id];
+        let healthKey = `${npc.name()}-${npc.info.level}`
+        if (!this.heathList[healthKey]) {
+            this.setHeathVal(healthKey, update.maxhp);
+            for (let key of Object.keys(this.NamePlates["NPCs"])) {
+                let npcToTest = document.game.GAME.npcs[key];
+                let healthKeyB = `${npcToTest.name()}-${npcToTest.info.level}`
+                if (healthKey == healthKeyB)
+                    this.Game_deleteNPC(key, undefined);
+            }
+        }
+        if (!npcPlate.healthText) {
+            npcPlate.healthText = new Text();
+        }
+        this.createHealthTextElement(npcPlate.healthText, ` ${update.hp}/${update.maxhp}HP`, "#FFFF00")
+
     }
 
     async ItemStack_update(camera: any, dt: any, itemstack: any): Promise<void> {
@@ -936,10 +877,11 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
             // Update Scaling
             if (!this.scaleDistance) {
                 var scaleVector = new document.game.THREE.Vector3();
-                var scale = scaleVector.subVectors(itemstack.worldPos, camera.position).length() / (this.scaleFactor);
+                var scale = scaleVector.subVectors(itemstack.worldPos, camera.position).length() * 0.005 * (this.scaleFactor);
                 this.NamePlates["Items"][uid].scale.set(scale, scale, scale);
             } else {
-                this.NamePlates["Items"][uid].scale.set(this.scaleFactor, this.scaleFactor, this.scaleFactor);
+                let scaledScaleFactor = this.scaleFactor * 0.01;
+                this.NamePlates["Items"][uid].scale.set(scaledScaleFactor, scaledScaleFactor, scaledScaleFactor);
             }
 
             // Update Position
@@ -1015,44 +957,168 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
     async loginOK() {
         for (const key in this.NamePlates["NPCs"]) {
             // Remove the nameplate from the scene
-            document.game.GRAPHICS.scene.threeScene.remove(this.NamePlates["NPCs"][key].name);
-
-            if (this.NamePlates["NPCs"][key].attackText) {
-                document.game.GRAPHICS.scene.threeScene.remove(this.NamePlates["NPCs"][key].attackText);
-                this.NamePlates["NPCs"][key].attackText.dispose();
-                delete this.NamePlates["NPCs"][key].attackText;
-            }
-
-            // Dispose of the nameplate
-            this.NamePlates["NPCs"][key].name.dispose();
-            // Delete the nameplate from the NamePlates object
-            delete this.NamePlates["NPCs"][key];
-
-            this.NamePlates["NPCs"][key] = undefined;
+            this.Game_deleteNPC(key, undefined);
         }
 
         for (const key in this.NamePlates["Items"]) {
             // Remove the nameplate from the scene
-            document.game.GRAPHICS.scene.threeScene.remove(this.NamePlates["Items"][key]);
-            // Dispose of the nameplate
-            this.NamePlates["Items"][key].dispose();
-            // Delete the nameplate from the NamePlates object
-            delete this.NamePlates["Items"][key];
-
-            this.NamePlates["Items"][key] = undefined;
+            this.Game_deleteItem(key)
         }
 
 
         for (const key in this.NamePlates["Players"]) {
             // Remove the nameplate from the scene
-            document.game.GRAPHICS.scene.threeScene.remove(this.NamePlates["Players"][key]);
-            // Dispose of the nameplate
-            this.NamePlates["Players"][key].dispose();
-            // Delete the nameplate from the NamePlates object
-            delete this.NamePlates["Players"][key];
-
-            this.NamePlates["Players"][key] = undefined;
+            this.Game_deletePlayer(key, undefined);
         }
+    }
+
+    createNPCTextElement(object: any, npc: any, color: string) {
+        object.text = npc.name();
+        object.color = color;
+        object.fontSize = 0.15;
+        object.anchorX = "center";
+        object.anchorY = "bottom";
+        object.font = "https://raw.githubusercontent.com/KKonaOG/Old-GenLite/main/Acme-Regular.ttf";
+
+        // Apply a slight outline to the text
+        object.outlineColor = "#000000";
+        object.outlineWidth = 0.010;
+        object.outlineBlur = 0.005;
+
+        document.game.GRAPHICS.scene.threeScene.add(object);
+
+        object.sync(() => {
+            object.renderOrder = 10001;
+            object.material[0].depthTest = false;
+            object.material[0].depthWrite = false;
+            object.material[1].depthTest = false;
+            object.material[1].depthWrite = false;
+
+
+            if (npc.info.attackable) {
+                object.position.y += npc.height;
+
+
+                let playerLevel = document.game.PLAYER.character.combatLevel;
+
+                let levelDiff = npc.info.level - playerLevel
+                let color = "#ffff00";
+
+                if (levelDiff > 3 && levelDiff < 6) {
+                    color = "#f80"
+                } else if (levelDiff >= 6) {
+                    color = "#f00";
+                } else if (levelDiff < -3 && levelDiff > -6) {
+                    color = "#8f0";
+                } else if (levelDiff <= -6) {
+                    color = "#ccc";
+                }
+
+                // It should be the Name (Level X)
+                this.createAttackTextElement(object, this.NamePlates["NPCs"][npc.id].attackText, " (Level " + npc.info.level + ")", color)
+                let heathKey = `${npc.name()}-${npc.info.level}`
+                if (this.heathList[heathKey]) {
+                    this.NamePlates["NPCs"][npc.id].healthText = new Text();
+                    this.NamePlates["NPCs"][npc.id].name.add(this.NamePlates["NPCs"][npc.id].healthText);
+                    this.createHealthTextElement(this.NamePlates["NPCs"][npc.id].healthText, `${this.heathList[heathKey]}HP`, "#FFFF00")
+                }
+            }
+
+            object.sync(() => {
+                if (this.NamePlates["NPCs"][npc.id].attackText) {
+                    this.NamePlates["NPCs"][npc.id].attackText.position.y -= npc.height;
+                }
+            });
+        });
+    }
+
+    createAttackTextElement(parent: any, object: any, text: string, color: string) {
+        object.text = text;
+        object.color = color;
+        object.font = "https://raw.githubusercontent.com/KKonaOG/Old-GenLite/main/Acme-Regular.ttf";
+        object.fontSize = 0.10;
+        object.anchorX = "center";
+        object.anchorY = "top";
+        object.renderOrder = 10001;
+        object.material.depthTest = false;
+        object.material.depthWrite = false;
+        object.visible = this.isPluginEnabled;
+        parent.add(object);
+
+        // Apply a slight outline to the text
+        object.outlineColor = "#000";
+        object.outlineWidth = 0.010;
+        object.outlineBlur = 0.005;
+
+        object.sync(() => {
+            object.renderOrder = 10001;
+            object.material[0].depthTest = false;
+            object.material[0].depthWrite = false;
+            object.material[1].depthTest = false;
+            object.material[1].depthWrite = false;
+        });
+
+    }
+
+    createHealthTextElement(object: any, text: string, color: string) {
+        object.text = text;
+        object.color = color;
+        object.font = "https://raw.githubusercontent.com/KKonaOG/Old-GenLite/main/Acme-Regular.ttf";
+        object.fontSize = 0.10;
+        object.anchorX = "left";
+        object.anchorY = "top";
+        object.position.x = 0.2;
+        object.renderOrder = 10001;
+        object.material.depthTest = false;
+        object.material.depthWrite = false;
+        object.visible = this.isPluginEnabled;
+
+        // Apply a slight outline to the text
+        object.outlineColor = "#000";
+        object.outlineWidth = 0.010;
+        object.outlineBlur = 0.005;
+
+        object.sync(() => {
+            object.renderOrder = 10001;
+            object.material[0].depthTest = false;
+            object.material[0].depthWrite = false;
+            object.material[1].depthTest = false;
+            object.material[1].depthWrite = false;
+        });
+
+    }
+
+    loadHealthValsFromIDB() {
+        this.heathList = {};
+        let plugin = this;
+        document.genlite.database.storeTx(
+            'healthList',
+            'readwrite',
+            (store) => {
+                store.getAll().onsuccess = (result) => {
+                    let res = result.target.result;
+                    for (let i in res) {
+                        this.heathList[res[i].healthKey] = res[i].value;
+                    }
+                    this.isHealthInit = true;
+                };
+            }
+        );
+
+    }
+
+    setHeathVal(healthKey: string, value: number) {
+        this.heathList[healthKey] = value;
+        document.genlite.database.storeTx(
+            'healthList',
+            'readwrite',
+            (store) => {
+                let request = store.put({
+                    healthKey: healthKey,
+                    value: value,
+                });
+            }
+        );
     }
 
     loadPrioritiesFromIDB() {
@@ -1081,7 +1147,7 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
         );
     }
 
-    setPriority(itemId: string, value: "low"|"normal"|"high") {
+    setPriority(itemId: string, value: "low" | "normal" | "high") {
         if (value === "normal" && this.itemPriorities[itemId]) {
             delete this.itemPriorities[itemId];
         } else if (value !== "normal") {
@@ -1130,6 +1196,8 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
 
     upPriority(itemId: string) {
         let element = this.itemElements[itemId];
+        if (!element)
+            return;
         let dom = element["titleElement"] as HTMLElement;
 
         let name = document.game.DATA.items[itemId].name;
@@ -1172,7 +1240,7 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
             button.dispatchEvent(new Event('click'));
         }
 
-        setTimeout(function() {
+        setTimeout(function () {
             ui.showTab('Item Priority');
 
             let search = document.getElementById("genlite-item-priority-search") as HTMLInputElement;
