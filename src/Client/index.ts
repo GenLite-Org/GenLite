@@ -43,6 +43,8 @@ import { GenLiteEnhancedBanking } from "./plugins/genlite-enhanced-banking.plugi
 import { GenLiteTaggingPlugin } from "./plugins/genlite-tagging.plugin";
 import { GenliteSimplifiedChatUiPlugin } from './plugins/genlite-simplified-chat-ui.plugin';
 import { GenLiteNamePlatesPlugin } from "./plugins/genlite-nameplates.plugin";
+import { GenliteFilterPlugin } from "./plugins/genlite-filters.plugin";
+
 
 // TODO: use globals.ts?
 declare global {
@@ -329,6 +331,7 @@ Post Init Plugins - once per page load
         await genlite.pluginLoader.addPlugin(GenLiteEnhancedBanking);
         await genlite.pluginLoader.addPlugin(GenLiteTaggingPlugin);
         await genlite.pluginLoader.addPlugin(GenliteSimplifiedChatUiPlugin);
+        await genlite.pluginLoader.addPlugin(GenliteFilterPlugin);
 
         // NOTE: currently initGenlite is called after the scene has started
         //       (in minified function qS). The initializeUI function does not
