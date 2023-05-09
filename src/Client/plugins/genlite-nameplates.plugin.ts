@@ -34,6 +34,8 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
     isHealthInit: boolean = false;
     heathList: { [id: string]: number } = {} // where id is mob id is name-level
 
+    testX = 0.1;
+
     pluginSettings: Settings = {
         "Global Scaling": {
             type: 'range',
@@ -880,7 +882,7 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
                 var scale = scaleVector.subVectors(itemstack.worldPos, camera.position).length() * 0.005 * (this.scaleFactor);
                 this.NamePlates["Items"][uid].scale.set(scale, scale, scale);
             } else {
-                let scaledScaleFactor = this.scaleFactor * 0.01;
+                let scaledScaleFactor = this.scaleFactor * 0.05;
                 this.NamePlates["Items"][uid].scale.set(scaledScaleFactor, scaledScaleFactor, scaledScaleFactor);
             }
 
