@@ -47,6 +47,9 @@ export class GenLiteCameraPlugin extends GenLitePlugin {
     skyboxEnabled: boolean = false;
     skybox: any = null;
 
+    saveCamera: boolean = false;
+    CameraPosition: Vector3;
+
     isPluginEnabled = true;
 
     photoCanvas: HTMLCanvasElement = null;
@@ -130,6 +133,11 @@ export class GenLiteCameraPlugin extends GenLitePlugin {
             min: GenLiteCameraPlugin.minRenderDistance,
             max: GenLiteCameraPlugin.maxRenderDistance,
             step: 5,
+        },
+        "Save Camera Position": {
+            type: "checkbox",
+            value: this.saveCamera,
+            stateHandler: this.handleSaveCamera.bind(this)
         }
     }
 
@@ -139,6 +147,7 @@ export class GenLiteCameraPlugin extends GenLitePlugin {
         this.originalCameraMode = document.game.WorldManager.updatePlayerTile;
         this.originalAdvanceToBB = document.game.Segment.prototype.advanceToBB;
         this.WORLDMANAGER = document.game.WORLDMANAGER;
+        this.CameraPosition = new document.game.THREE.Vector3();
     }
 
     async postInit() {
@@ -220,6 +229,10 @@ export class GenLiteCameraPlugin extends GenLitePlugin {
         this.updateFog();
     }
 
+    handleSaveCamera(value: boolean) {
+        this.saveCamera = value;
+    }
+
     updateSkyboxAndFog() {
         if (this.isPluginEnabled && this.skyboxEnabled) {
             if (this.skybox == null) {
@@ -260,6 +273,13 @@ export class GenLiteCameraPlugin extends GenLitePlugin {
         this.updateCameraMode();
         this.handleRenderDistance(this.renderDistance);
         this.handleSkybox(this.skyboxEnabled);
+        if(this.CameraPosition && this.saveCamera)
+            document.game.GRAPHICS.camera.camera.position.copy(this.CameraPosition);
+    }
+
+    Network_logoutOK(): void {
+        if(this.saveCamera)
+             this.CameraPosition.copy(document.game.GRAPHICS.camera.camera.position);
     }
 
     updateCameraMode() {

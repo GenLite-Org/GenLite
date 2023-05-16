@@ -52,6 +52,8 @@ interface Vector3 {
     x: number,
     y: number,
     z: number
+
+    copy(toCopy: Vector3): Vector3
 }
 
 interface SegmentKey {
