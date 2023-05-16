@@ -143,8 +143,9 @@ export class GenLiteFilterPlugin extends GenLitePlugin {
 
     loginOK(): void {
         /* mod to the game canvas */
-        this.elementsToFilter[3].style.position = 'absolute';
-        this.elementsToFilter[3].style.zIndex = '-1';
+        this.elementsToFilter = document.getElementsByTagName("canvas");
+        document.game.GRAPHICS.renderer.domElement.style.position = 'absolute';
+        document.game.GRAPHICS.renderer.domElement.style.zIndex = '-1';
         this.updateFilters();
     }
 }
