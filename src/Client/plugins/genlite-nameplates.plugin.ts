@@ -880,10 +880,10 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
             if (!this.scaleDistance) {
                 var scaleVector = new document.game.THREE.Vector3();
                 var scale = scaleVector.subVectors(itemstack.worldPos, camera.position).length() * 0.005 * (this.scaleFactor);
-                this.NamePlates["Items"][uid].scale.set(scale, scale, scale);
+                this.NamePlates["Items"][uid].scale?.set(scale, scale, scale);
             } else {
                 let scaledScaleFactor = this.scaleFactor * 0.05;
-                this.NamePlates["Items"][uid].scale.set(scaledScaleFactor, scaledScaleFactor, scaledScaleFactor);
+                this.NamePlates["Items"][uid].scale?.set(scaledScaleFactor, scaledScaleFactor, scaledScaleFactor);
             }
 
             // Update Position
