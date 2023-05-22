@@ -26,6 +26,7 @@ export class GenLiteEnhancedContextMenu extends GenLitePlugin {
     photosEnabled: boolean = true;
     betterRockNames: boolean = false;
     rightClickAttack: boolean = false;
+    dropFirst: boolean = true;
 
     originalInventoryContextOptions: Function;
     originalNPCIntersects: Function;
@@ -70,6 +71,11 @@ export class GenLiteEnhancedContextMenu extends GenLitePlugin {
             value: this.photosEnabled,
             stateHandler: this.handlePhotosEnabledToggle.bind(this)
         },
+        "Ctrl-Shift Drop": {
+            type: 'checkbox',
+            value: this.dropFirst,
+            stateHandler: this.handleDropFirst.bind(this)
+        },
     }
 
     async init() {
@@ -113,6 +119,10 @@ export class GenLiteEnhancedContextMenu extends GenLitePlugin {
 
     handleRightClickAttackToggle(state: boolean): void {
         this.rightClickAttack = state;
+    }
+
+    handleDropFirst(state: boolean): void {
+        this.dropFirst = state;
     }
 
     NPC_intersects(ray, list) {
@@ -298,7 +308,7 @@ export class GenLiteEnhancedContextMenu extends GenLitePlugin {
     }
 
     Inventory__getAllContextOptions(slotID, itemActions) {
-        if (!this.isEnabled || !this.lookupItems) {
+        if (!this.isEnabled) {
             return;
         }
 
@@ -306,26 +316,44 @@ export class GenLiteEnhancedContextMenu extends GenLitePlugin {
             return;
 
         const objectName = itemActions[0].object.text();
+        if (this.lookupItems) {
+            let cleanName = objectName.replace(/(<([^>]+)>)/gi, ""); // Remove the HTML tags from the name
+            cleanName = cleanName.replace('Scrip - ', ''); // Remove Scrip - from the name of the item
+            cleanName = cleanName.replace(' ', '_'); // Replace spaces with underscores
 
-        let cleanName = objectName.replace(/(<([^>]+)>)/gi, ""); // Remove the HTML tags from the name
-        cleanName = cleanName.replace('Scrip - ', ''); // Remove Scrip - from the name of the item
-        cleanName = cleanName.replace(' ', '_'); // Replace spaces with underscores
+            // Remove H.Q. / L.Q. from the name of the item
+            cleanName = cleanName.replace('H.Q.', '');
+            cleanName = cleanName.replace('L.Q.', '');
 
-        // Remove H.Q. / L.Q. from the name of the item
-        cleanName = cleanName.replace('H.Q.', '');
-        cleanName = cleanName.replace('L.Q.', '');
+            // Remove " +1" and " +2" from the name of the item
+            cleanName = cleanName.replace(' +1', '');
+            cleanName = cleanName.replace(' +2', '');
 
-        // Remove " +1" and " +2" from the name of the item
-        cleanName = cleanName.replace(' +1', '');
-        cleanName = cleanName.replace(' +2', '');
 
-        itemActions.push({
-            text: "Lookup",
-            priority: -2,
-            object: itemActions[0].object,
-            action: () => {
-                window.open(this.wikiBaseURL + cleanName, '_blank');
+            itemActions.push({
+                text: "Lookup",
+                priority: -2,
+                object: itemActions[0].object,
+                action: () => {
+                    window.open(this.wikiBaseURL + cleanName, '_blank');
+                }
+            });
+        }
+        if (this.dropFirst) {
+            let slot = "";
+            let hoverItem = document.game.INVENTORY.items[slotID].item;
+            for (slot of Object.keys(document.game.INVENTORY.items)) {
+                if (hoverItem == document.game.INVENTORY.items[slot].item)
+                    break;
             }
-        })
+            itemActions.push({
+                text: `Drop first ${objectName}`,
+                priority: document.game.KEYBOARD[16] && document.game.KEYBOARD[17] ? 999 : -2,
+                object: itemActions.object,
+                action: () => {
+                    document.game.NETWORK_CONTAINER.network.action("drop", { "slot": parseInt(slot) })
+                }
+            });
+        }
     }
 }
