@@ -345,7 +345,7 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
     }
 
     createItemRow(itemId: string, count: number) {
-        if (!document.game.DATA.items[itemId] || !!this.itemElements[itemId]) {
+        if (!document.game.DATA.items[itemId] || this.itemElements[itemId]) {
             // e.g. "nothing" or already added items
             return null;
         }
@@ -380,7 +380,7 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
         upArrow.classList.add("genlite-items-arrow-up");
         arrowHolder.appendChild(upArrow);
         upArrow.onclick = function (e) {
-            plugin.upPriority(itemId);
+            plugin.upPriority(itemId, true);
         };
 
         let downArrow = <HTMLElement>document.createElement("div");
@@ -388,7 +388,7 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
         downArrow.classList.add("genlite-items-arrow-down");
         arrowHolder.appendChild(downArrow);
         downArrow.onclick = function (e) {
-            plugin.downPriority(itemId);
+            plugin.downPriority(itemId, true);
         };
         return row;
     }
@@ -1134,12 +1134,14 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
                     const cursor = e.target.result;
                     if (cursor === null) return;
                     let item = cursor.value;
+                    if(!this.itemElements[item.itemId])
+                        this.createItemRow(item.itemId, null);
                     switch (item.value) {
                         case "high":
-                            plugin.upPriority(item.itemId);
+                            plugin.upPriority(item.itemId, false);
                             break;
                         case "low":
-                            plugin.downPriority(item.itemId);
+                            plugin.downPriority(item.itemId, false);
                             break;
                         default:
                     }
@@ -1149,27 +1151,29 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
         );
     }
 
-    setPriority(itemId: string, value: "low" | "normal" | "high") {
+    setPriority(itemId: string, value: "low" | "normal" | "high", modify: boolean) {
         if (value === "normal" && this.itemPriorities[itemId]) {
             delete this.itemPriorities[itemId];
         } else if (value !== "normal") {
             this.itemPriorities[itemId] = value;
         }
 
-        document.genlite.database.storeTx(
-            'itempri',
-            'readwrite',
-            (store) => {
-                if (value === "normal") {
-                    let request = store.delete(itemId);
-                } else {
-                    let request = store.put({
-                        itemId: itemId,
-                        value: value,
-                    });
+        if (modify) {
+            document.genlite.database.storeTx(
+                'itempri',
+                'readwrite',
+                (store) => {
+                    if (value === "normal") {
+                        let request = store.delete(itemId);
+                    } else {
+                        let request = store.put({
+                            itemId: itemId,
+                            value: value,
+                        });
+                    }
                 }
-            }
-        );
+            );
+        }
     }
 
     getItemColor(itemId: string) {
@@ -1196,7 +1200,7 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
         }
     }
 
-    upPriority(itemId: string) {
+    upPriority(itemId: string, modify: boolean) {
         let element = this.itemElements[itemId];
         if (!element)
             return;
@@ -1207,16 +1211,18 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
         if (dom.classList.contains("genlite-items-low-pri")) {
             dom.classList.remove("genlite-items-low-pri");
             element["seo"] += "pri:normal;";
-            this.setPriority(itemId, "normal");
+            this.setPriority(itemId, "normal", modify);
             return;
         }
         element["seo"] += "pri:high;";
         dom.classList.add("genlite-items-high-pri");
-        this.setPriority(itemId, "high");
+        this.setPriority(itemId, "high", modify);
     }
 
-    downPriority(itemId: string) {
+    downPriority(itemId: string, modify: boolean) {
         let element = this.itemElements[itemId];
+        if (!element)
+            return;
         let dom = element["titleElement"] as HTMLElement;
 
         let name = document.game.DATA.items[itemId].name;
@@ -1224,12 +1230,12 @@ export class GenLiteNamePlatesPlugin extends GenLitePlugin {
         if (dom.classList.contains("genlite-items-high-pri")) {
             element["seo"] += "pri:normal;";
             dom.classList.remove("genlite-items-high-pri");
-            this.setPriority(itemId, "normal");
+            this.setPriority(itemId, "normal", modify);
             return;
         }
         element["seo"] += "pri:low;";
         dom.classList.add("genlite-items-low-pri");
-        this.setPriority(itemId, "low");
+        this.setPriority(itemId, "low", modify);
     }
 
     priorityEditor(itemIds: Array<string>) {
