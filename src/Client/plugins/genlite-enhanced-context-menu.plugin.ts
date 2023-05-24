@@ -341,7 +341,7 @@ export class GenLiteEnhancedContextMenu extends GenLitePlugin {
         }
         if (this.dropFirst) {
             itemActions.push({
-                text: `Drop first ${objectName}`,
+                text: 'Drop first ',
                 priority: document.game.KEYBOARD[16] && document.game.KEYBOARD[17] ? 999 : -2,
                 object: itemActions[0].object,
                 action: () => {

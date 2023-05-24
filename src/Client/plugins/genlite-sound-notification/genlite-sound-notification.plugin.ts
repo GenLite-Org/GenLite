@@ -110,13 +110,14 @@ export class GenLiteSoundNotification extends GenLitePlugin {
         this.genliteSoundListener.setMasterVolume(this.overrideVolume / 100.0) //bypas setvolume so you dont have to override it 
         this.genliteSFXPlayer = new document.game.SFXPlayer.constructor();
         this.genliteSFXPlayer.load();
+        this.genliteSFXPlayer.sounds = document.game.SFX_PLAYER.sounds;
         this.genliteSFXPlayer.play = (key, volume = 1) => { this.overridePlay(key, volume) }; //override the default set volume
         this.playerInUse = document.game.SFX_PLAYER;
         if (this.overrideVolume)
             this.playerInUse = this.genliteSFXPlayer;
 
-        this.boostDepletion.init();
-        this.healthRegeneration.init();
+        this.boostDepletion.init(this);
+        this.healthRegeneration.init(this);
     }
 
     async postInit() {

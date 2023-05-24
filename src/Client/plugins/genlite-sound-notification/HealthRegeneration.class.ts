@@ -2,14 +2,24 @@ export class HealthRegeneration {
   healthRegenerationInterval;
 
   // TODO: Host as @resource?
-  healthRegenAudio = new Audio('https://furious.no/downloads/genfanad/ping.wav');
+  healthRegenAudio; 
   healthBarText: HTMLElement = this.getHealthBarText();
   oldHealth = -Infinity;
   isPluginEnabled: boolean = false;
 
+  genliteSounds;
+
   static healthRegenerationIntervalMilliseconds = 100;
 
-  init() {
+  init(genliteSounds) {
+    document.game.SFX_PLAYER.loader.load('https://furious.no/downloads/genfanad/ping.wav', this.loadSound.bind(this));
+    this.genliteSounds = genliteSounds
+
+  }
+
+  loadSound(t){
+    this.genliteSounds.genliteSFXPlayer.sounds['genlite-ping'] = t;
+    document.game.SFX_PLAYER.sounds['genlite-ping'] = t;
   }
 
   public stop() {
@@ -18,7 +28,7 @@ export class HealthRegeneration {
 
   public start() {
     this.healthRegenerationInterval = setInterval(() => {
-      if (!this.healthBarText) {
+      if (!this.healthBarText) {  
         this.healthBarText = this.getHealthBarText();
       }
 
@@ -27,7 +37,7 @@ export class HealthRegeneration {
       const diff = Math.floor(health - this.oldHealth);
 
       if (diff === 1) {
-        this.healthRegenAudio.play();
+        this.genliteSounds.playerInUse.play('genlite-ping');
       }
 
       this.oldHealth = health;

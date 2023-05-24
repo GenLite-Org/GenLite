@@ -1,3 +1,5 @@
+import { GenLiteSoundNotification } from "./genlite-sound-notification.plugin";
+
 export class BoostDepletion {
   public static readonly selectorSkillContainer = '.new_ux-player-info-modal__modal__window--stats__skill__container';
 
@@ -5,8 +7,16 @@ export class BoostDepletion {
   intervalExpirationCheck;
   intervalExpirationCheckMilliseconds = 250;
 
-  public init() {
-    this.audioBoostExpired = new Audio('https://furious.no/downloads/genfanad/bell.wav');
+  genliteSounds: GenLiteSoundNotification;
+
+  init(genliteSounds) {
+    document.game.SFX_PLAYER.loader.load('https://furious.no/downloads/genfanad/bell.wav', this.loadSound.bind(this));
+    this.genliteSounds = genliteSounds
+  }
+
+  loadSound(t){
+    this.genliteSounds.genliteSFXPlayer.sounds['genlite-bell'] = t;
+    document.game.SFX_PLAYER.sounds['genlite-bell'] = t;
   }
 
   enable() {
@@ -37,7 +47,7 @@ export class BoostDepletion {
       }
 
       if (foundAnyExpiredBoost) {
-        this.audioBoostExpired?.play();
+        this.genliteSounds.playerInUse.play('genlite-bell');
       }
 
       state = newState;
