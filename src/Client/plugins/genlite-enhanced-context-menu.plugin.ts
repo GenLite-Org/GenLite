@@ -340,17 +340,17 @@ export class GenLiteEnhancedContextMenu extends GenLitePlugin {
             });
         }
         if (this.dropFirst) {
-            let slot = "";
-            let hoverItem = document.game.INVENTORY.items[slotID].item;
-            for (slot of Object.keys(document.game.INVENTORY.items)) {
-                if (hoverItem == document.game.INVENTORY.items[slot].item)
-                    break;
-            }
             itemActions.push({
-                text: `Drop first ${objectName}`,
+                text: 'Drop first ',
                 priority: document.game.KEYBOARD[16] && document.game.KEYBOARD[17] ? 999 : -2,
-                object: itemActions.object,
+                object: itemActions[0].object,
                 action: () => {
+                    let slot = "";
+                    let hoverItem = document.game.INVENTORY.items[slotID].item;
+                    for (slot of Object.keys(document.game.INVENTORY.items)) {
+                        if (hoverItem == document.game.INVENTORY.items[slot].item)
+                            break;
+                    }
                     document.game.NETWORK_CONTAINER.network.action("drop", { "slot": parseInt(slot) })
                 }
             });
