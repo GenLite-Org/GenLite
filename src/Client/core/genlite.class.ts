@@ -17,6 +17,7 @@ import { GenLiteSettingsPlugin } from "./plugins/genlite-settings.plugin";
 import { GenLiteCommandsPlugin } from "./plugins/genlite-commands.plugin";
 import { GenLiteDatabasePlugin } from "./plugins/genlite-database.plugin";
 import { GenLiteUIPlugin } from "./plugins/genlite-ui-plugin";
+import {GenLiteExportPlugin} from "./plugins/genlite-backup.plugin"
 import { GenLitePlugin } from './interfaces/plugin.class';
 
 export class GenLite {
@@ -31,6 +32,7 @@ export class GenLite {
     commands: GenLiteCommandsPlugin;
     database: GenLiteDatabasePlugin;
     ui: GenLiteUIPlugin;
+    export: GenLiteExportPlugin;
 
     logged = false;
 

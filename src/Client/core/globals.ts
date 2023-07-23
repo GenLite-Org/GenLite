@@ -27,7 +27,7 @@ declare interface CommandSpec {
 declare type Settings = {
     [key: string]: {
         type: string,
-        value: any,
+        value?: any,
         stateHandler: Function,
 
         // This should be removed in the future as it is only used for backwards compatibility with the old settings system

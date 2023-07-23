@@ -17,6 +17,8 @@ import { GenLiteSettingsPlugin } from "./core/plugins/genlite-settings.plugin";
 import { GenLiteCommandsPlugin } from "./core/plugins/genlite-commands.plugin";
 import { GenLiteConfirmation } from "./core/helpers/genlite-confirmation.class";
 import { GenLiteDatabasePlugin } from "./core/plugins/genlite-database.plugin";
+import {GenLiteExportPlugin} from "./core/plugins/genlite-backup.plugin";
+
 
 /** Official Plugins */
 import { GenLiteCameraPlugin } from "./plugins/genlite-camera.plugin";
@@ -307,6 +309,7 @@ Post Init Plugins - once per page load
         genlite.commands = await genlite.pluginLoader.addPlugin(GenLiteCommandsPlugin);
         genlite.database = await genlite.pluginLoader.addPlugin(GenLiteDatabasePlugin);
         genlite.ui = await genlite.pluginLoader.addPlugin(GenLiteUIPlugin);
+        genlite.export = await genlite.pluginLoader.addPlugin(GenLiteExportPlugin);
 
 
 
