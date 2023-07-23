@@ -1,6 +1,6 @@
 {
   "name": "genlite",
-  "version": "0.2.26",
+  "version": "0.2.27-0",
   "scripts": {
     "build:prodbeta": "npm version prerelease --no-git-tag-version --force && npx webpack --mode production --env type=prerelease",
     "build:prodrelease": "npm version patch --no-git-tag-version --force && npx webpack --mode production --env type=release",
@@ -10,10 +10,11 @@
   "dependencies": {
     "@types/stats.js": "^0.17.0",
     "0g": "^0.0.9",
+    "indexeddb-export-import": "^2.1.5",
     "npm": "^9.6.7",
     "robust-point-in-polygon": "^1.0.3",
     "stats.js": "^0.17.0",
-    "troika-three-text": "^0.47.1",
+    "troika-three-text": "^0.47.2",
     "xmlhttprequest": "^1.8.0"
   },
   "devDependencies": {

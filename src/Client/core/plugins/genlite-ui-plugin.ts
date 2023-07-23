@@ -834,6 +834,8 @@ export class GenLiteUIPlugin extends GenLitePlugin {
                 case 'button':
                     settings[setting].value = settings[setting].value.toString();
                     break;
+                case 'file':
+                    break;
                 default:
                     this.error(`Invalid setting type for ${setting} in ${plugin}`);
                     break;
@@ -1071,15 +1073,24 @@ export class GenLiteUIPlugin extends GenLitePlugin {
                         settings[setting].stateHandler(settingInput.value);
                     });
                     break;
+                case 'file':
+                    settingInput = document.createElement('input');
+                    settingInput.type = 'file';
+                    settingInput.addEventListener('change', (e) => {
+                        // Call the plugin state handler
+                        settings[setting].stateHandler(settingInput.value, e);
+                        this.setKey(plugin + "." + setting, settingInput.value);
+                    });
+                    break;
                 default:
                     // Create the input
                     settingInput = document.createElement('input');
                     settingInput.type = settings[setting].type;
                     settingInput.value = settings[setting].value;
                     // Add the event listener to the input
-                    settingInput.addEventListener('change', () => {
+                    settingInput.addEventListener('change', (e) => {
                         // Call the plugin state handler
-                        settings[setting].stateHandler(settingInput.value);
+                        settings[setting].stateHandler(settingInput.value, e);
                         this.setKey(plugin + "." + setting, settingInput.value);
                     });
                     break;
