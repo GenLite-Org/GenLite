@@ -20,7 +20,7 @@ export abstract class GenLitePlugin {
     Network_logoutOK?(): void;
     Network_action?(verb: string, params: object): void; // TODO: provide proper type
     Network_handle?(verb: string, payload: object): void;
-    Camera_update?(dt: number): void;
+    //Camera_update?(dt: number): void;
     PlayerInfo_updateXP?(xp: object): void; // TODO: provide proper type
     PlayerInfo_updateTooltip?(): void;
     PlayerInfo_updateSkills?(): void;
