@@ -79,7 +79,7 @@ export class GenLite {
 
 
         // Three.js Canvas Text Hooks
-        this.installHook('Camera', 'update');
+        //this.installHook('Camera', 'update');
         this.installHook('Game', 'deleteNPC');
         this.installHook('Game', 'deletePlayer');
         this.installHook('Game', 'deleteItem');
