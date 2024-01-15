@@ -202,7 +202,7 @@ Post Init Plugins - once per page load
         function hookKeyboard() {
             window.addEventListener("focus", (e) => {
                 setTimeout(() => {
-                    document.game.KEYBOARD = document.client.get('gk');
+                    document.game.KEYBOARD = document.client.get('FT');
                 }, 10);
             });
         }
@@ -211,87 +211,87 @@ Post Init Plugins - once per page load
         document.game.ITEM_RIGHTCLICK_LIMIT = 20; // TODO: Is this equivalent? It seems to no longer be included in client.js
 
 
-        // Classes
-        gameObject('Bank', 'uv');
-        gameObject('Chat', 'fv');
-        gameObject('Actor', 'Dg');
-        gameObject('Animation', 'h_');
-        gameObject('Camera', 'PS');
-        gameObject('Character', 'E_');
-        gameObject('DeduplicatingCachedLoader', 'wS');
-        gameObject('FadeAnimation', 'd_');
-        gameObject('FrozenEff5ect', 'Gg');
-        gameObject('Game', 'Z_');
-        gameObject('Graphics', 'lk');
-        gameObject('HumanCharacter', 'jg');
-        gameObject('ItemStack', 'Og');
-        gameObject('MinimapRenderer', 'j_');
-        gameObject('ModelProjectileAnimation', 'g_');
-        gameObject('MonsterCharacter', 'Hg');
-        gameObject('Network', 'mg');
-        gameObject('NewSegmentLoader', 'yS');
-        gameObject('OptimizedScene', 'ok');
-        gameObject('PassThroughSpineTexture', 'Pg');
-        gameObject('Player', 'O_');
-        gameObject('Seed', 'z_');
-        gameObject('Segment', 'B_');
-        gameObject('ShrinkForBoatAnimation', 'p_');
-        gameObject('SpriteAnimation', '__');
-        gameObject('SpriteProjectileAnimation', 'f_');
-        gameObject('TeleportAnimation', 'u_');
-        gameObject('TemporaryScenery', 'H_');
-        gameObject('WorldManager', 'ek');
-        gameObject('WorldObject', 'E_');
-        gameObject('Math', 'xi', document.game.THREE);
-        gameObject('SFXPlayer', '$m');
-        gameObject('PlayerHUD', 'Wv');
-        gameObject('PlayerInfo', 'rv');
-        gameObject('Inventory', 'qv');
-        gameObject('PhasedLoadingManager', 'VS');
-        gameObject('Trade', 'iw');
-        gameObject('Friends', 'G_');
-        gameObject('Shop', 'tw');
+        // Classes 15-01-2024 beta-0.08-a
+        gameObject('Bank', 'nv');
+        gameObject('Chat', 'rv'); 
+        gameObject('Actor', 'Jb'); 
+        gameObject('Animation', 'um');
+        gameObject('Camera', 'qg'); 
+        gameObject('Character', 'zm'); 
+        gameObject('DeduplicatingCachedLoader', 'wT');
+        gameObject('FadeAnimation', '_m');
+        gameObject('FrozenEffect', 'sw');
+        gameObject('Game', 'tf');
+        gameObject('Graphics', 'Yg');
+        gameObject('HumanCharacter', 'aw');
+        gameObject('ItemStack', 'Wb');
+        gameObject('MinimapRenderer', 'Ym');
+        gameObject('ModelProjectileAnimation', 'wm');
+        gameObject('MonsterCharacter', 'rw');
+        gameObject('Network', 'Eb');
+        gameObject('NewSegmentLoader', 'yT');
+        gameObject('OptimizedScene', 'Wg');
+        gameObject('PassThroughSpineTexture', 'Qb');
+        gameObject('Player', 'Rm');
+        gameObject('Seed', 'Dm');
+        gameObject('Segment', 'Vm');
+        gameObject('ShrinkForBoatAnimation', 'mm');
+        gameObject('SpriteAnimation', 'gm');
+        gameObject('SpriteProjectileAnimation', 'bm');
+        gameObject('TeleportAnimation', 'pm');
+        gameObject('TemporaryScenery', '$m');
+        gameObject('WorldManager', 'zT');
+        gameObject('WorldObject', 'Lm');
+        gameObject('Math', 'wi', document.game.THREE);
+        gameObject('SFXPlayer', 'Qp');
+        gameObject('PlayerHUD', 'Rv');
+        gameObject('PlayerInfo', '$w');
+        gameObject('Inventory', 'Dv');
+        gameObject('PhasedLoadingManager', 'lf');
+        gameObject('Trade', 'Hv');
+        gameObject('Friends', 'Zm');
+        gameObject('Shop', 'jv');
+        gameObject('NPC', 'Im');
 
 
         // Objects
-        gameObject('BANK', 'bw');
-        gameObject('CHAT', 'Sw');
-        gameObject('DATA', 'kS');
-        gameObject('FRIENDS', 'Ow');
-        gameObject('GAME', '$_.game');
-        gameObject('GRAPHICS', 'wk.graphics');
-        gameObject('INVENTORY', 'Rw');
-        gameObject('NETWORK', 'fg.network');
-        gameObject('PHASEDLOADINGMANAGER', 'VS');
-        gameObject('PLAYER', 'xk.player');
-        gameObject('SFX_PLAYER', 'Jm');
-        gameObject('WORLDMANAGER', 'ek');
-        gameObject('MUSIC_PLAYER', '$v');
-        gameObject('SETTINGS', 'Gw');
+        gameObject('BANK', 'Ix');
+        gameObject('CHAT', 'Ox');
+        gameObject('DATA', 'JM');
+        gameObject('FRIENDS', 'Hx');
+        gameObject('GAME', 'af.game');
+        gameObject('GRAPHICS', 'jT.graphics');
+        gameObject('INVENTORY', 'Gx');
+        gameObject('NETWORK', 'Mb.network');
+        gameObject('PHASEDLOADINGMANAGER', 'window.resource_loader');
+        gameObject('PLAYER', 'VT.player');
+        gameObject('SFX_PLAYER', 'Qp');
+        gameObject('WORLDMANAGER', 'IT');
+        gameObject('MUSIC_PLAYER', 'window.MUSIC_PLAYER');
+        gameObject('SETTINGS', 'ey');
         gameObject('THREE', 'e');
-        gameObject('PLAYER_INFO', 'Bw');
-        gameObject('PLAYER_HUD', 'Nw');
-        gameObject('NPC', 'I_');
-        gameObject('TRADE', 'Yw');
-        gameObject('NETWORK_CONTAINER', 'fg');
-        gameObject('SHOP', 'qw');
-        gameObject('SPELLS', "Ww");
-        gameObject('CURRENCY', "Cw");
+        gameObject('PLAYER_INFO', 'Xx');
+        gameObject('PLAYER_HUD', 'Yx');
+        gameObject('TRADE', 'iy');
+        gameObject('NETWORK_CONTAINER', 'Mb');
+        gameObject('SHOP', 'ty');
+        gameObject('SPELLS', "ny");
+        gameObject('CURRENCY', "jx");
 
         /* Special Case Objects */
         /* have to do this here because keyboard is constantly redefined */
-        gameObject('KEYBOARD', 'gk');
+        gameObject('KEYBOARD', 'FT');
         hookKeyboard();
 
         //Functions
-        gameObject('returnsAnItemName', 'Tg');
-        gameObject('getStaticPath', 'O');
-        gameObject('toDisplayName', 'W_');
-        gameObject('getSegmentStringfromObject', 'JS');
+        gameObject('returnsAnItemName', 'Bb');
+        gameObject('getStaticPath', 'D');
+        gameObject('toDisplayName', 'Jm');
+        gameObject('getSegmentStringfromObject', 'LT');
 
         //Constants
-        gameObject('SOME_CONST_USED_FOR_BANK', 'P');
-        gameObject('MUSIC_TRACK_NAMES', 'Kv');
+        gameObject('SOME_CONST_USED_FOR_BANK', 'B');
+        gameObject('MUSIC_TRACK_NAMES', '$p');
 
 
 
@@ -357,8 +357,8 @@ Post Init Plugins - once per page load
     function hookStartScene() {
 
         let doc = (document as any);
-        doc.client.set('document.client.originalStartScene', doc.client.get('mk'));
-        doc.client.set('mk', function () {
+        doc.client.set('document.client.originalStartScene', doc.client.get('PT'));
+        doc.client.set('PT', function () {
             document.client.originalStartScene();
             setTimeout(document.initGenLite, 100);
         });

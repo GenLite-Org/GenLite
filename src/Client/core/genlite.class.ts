@@ -44,7 +44,7 @@ export class GenLite {
     }
 
     async init() {
-        this.installHookNoProto('PhasedLoadingManager', 'start_phase', this.hookPhased);
+        this.installHookNoProto('PhasedLoadingManager', 'phaseStarted', this.hookPhased);
         this.installHookNoProto('WORLDMANAGER', 'loadSegment')
         this.installHookNoProto('WORLDMANAGER', 'createSegment')
 
@@ -107,7 +107,7 @@ export class GenLite {
     }
 
     hookPhased(fnName: string, ...args: Array<unknown>) {
-        if (args[0] === "game_loaded" && !this.logged) {
+        if (document.game.PHASEDLOADINGMANAGER.current_phase == 11 && !this.logged) {
             this.hook('loginOK', args);
             this.logged = true;
 
